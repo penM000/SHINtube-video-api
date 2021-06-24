@@ -1,0 +1,7 @@
+*.pyc
+
+bin/
+video/
+
+!bin/.gitkeep
+!video/.gitkeep
