@@ -1,58 +1,41 @@
 import asyncio
-import random
-import time
+
+from .encode import encode
 
 queue = None
+encode_tasks = []
 
 
-async def worker(name):
+async def encode_worker(queue):
     while True:
         # Get a "work item" out of the queue.
-        sleep_for = await queue.get()
-
+        height, encode_config = await queue.get()
+        print(height)
         # Sleep for the "sleep_for" seconds.
-        await asyncio.sleep(sleep_for)
+
+        await encode(
+            folderpath=encode_config["folderpath"],
+            filename=encode_config["filename"],
+            height=encode_config["height"]
+        )
+
+        # await asyncio.sleep(5)
 
         # Notify the queue that the "work item" has been processed.
         queue.task_done()
 
-        print(f'{name} has slept for {sleep_for:.2f} seconds')
-        queue.put_nowait(0.1)
 
-
-async def main():
-    # Create a queue that we will use to store our "workload".
-    # キューの保存場所
+async def add_encode_queue(folderpath, filename, height):
     global queue
-    queue = asyncio.Queue()
-
-    # Generate random timings and put them into the queue.
-    total_sleep_time = 0
-    for _ in range(20):
-        sleep_for = random.uniform(0.05, 1.0)
-        total_sleep_time += sleep_for
-        queue.put_nowait(sleep_for)
-
-    # Create three worker tasks to process the queue concurrently.
-    tasks = []
-    for i in range(3):
-        task = asyncio.create_task(worker(f'worker-{i}'))
-        tasks.append(task)
-    await asyncio.sleep(15)
-    """
-    # Wait until the queue is fully processed.
-    started_at = time.monotonic()
-    await queue.join()
-    total_slept_for = time.monotonic() - started_at
-
-    # Cancel our worker tasks.
-    for task in tasks:
-        task.cancel()
-    # Wait until all worker tasks are cancelled.
-    await asyncio.gather(*tasks, return_exceptions=True)
-
-    print('====')
-    print(f'3 workers slept in parallel for {total_slept_for:.2f} seconds')
-    print(f'total expected sleep time: {total_sleep_time:.2f} seconds')
-    """
-asyncio.run(main())
+    global encode_workers
+    if queue is None:
+        queue = asyncio.PriorityQueue()
+        for i in range(1):
+            task = asyncio.create_task(encode_worker(queue))
+            encode_tasks.append(task)
+    encode_config = {
+        "folderpath": folderpath,
+        "filename": filename,
+        "height": height
+    }
+    queue.put_nowait((height, encode_config))
