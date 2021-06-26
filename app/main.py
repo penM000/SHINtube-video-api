@@ -1,4 +1,5 @@
 from .internal.module.video.encode import encode
+from .internal.module.video.queue import add_encode_queue
 import aiofiles
 from fastapi import FastAPI
 from fastapi import File, UploadFile
@@ -33,6 +34,8 @@ async def post_endpoint(in_file: UploadFile = File(...)):
                 await out_file.write(content)  # async write chunk
             else:
                 break
-    await encode("./video", "1.mp4")
+    
+    #await add_encode_queue("./video", "1.mp4", height=360)
+    await add_encode_queue("./video", "1.mp4", height=160)
 
     return {"Result": "OK"}
