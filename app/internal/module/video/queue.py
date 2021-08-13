@@ -1,6 +1,8 @@
 import asyncio
 
 from .encode import encode
+from .item import add_resolution_task
+
 
 queue = None
 encode_tasks = []
@@ -11,7 +13,7 @@ async def encode_worker(queue):
         # Get a "work item" out of the queue.
         height, encode_config = await queue.get()
         print(height)
-        # Sleep for the "sleep_for" seconds.
+        # DBにprogressの更新
 
         await encode(
             folderpath=encode_config["folderpath"],
@@ -19,9 +21,7 @@ async def encode_worker(queue):
             height=encode_config["height"]
         )
 
-        # await asyncio.sleep(5)
-
-        # Notify the queue that the "work item" has been processed.
+        # DBにdoneの更新
         queue.task_done()
 
 
@@ -38,4 +38,6 @@ async def add_encode_queue(folderpath, filename, height):
         "filename": filename,
         "height": height
     }
+    # DBにwaitで登録
+    add_resolution_task(folderpath, f"{height}p")
     queue.put_nowait((height, encode_config))
