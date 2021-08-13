@@ -6,7 +6,7 @@ async def command_run(cmd, cwd, normal_mode=True):
         cmd,
         cwd=cwd,
         stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.STDOUT
+        stderr=asyncio.subprocess.PIPE
     )
     if normal_mode:
         stdout, stderr = await proc.communicate()
