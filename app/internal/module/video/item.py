@@ -95,7 +95,7 @@ def update_json(year, cid, vid, title, explanation):
     _dict["title"] = title
     _dict["explanation"] = explanation
     # jsonの書き込み
-    with open(json_file) as f:
+    with open(json_file, "w") as f:
         json.dump(_dict, f, indent=4)
     return True
 
