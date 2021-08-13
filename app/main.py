@@ -1,5 +1,7 @@
-from .internal.module.video.encode import encode
+
 from .internal.module.video.queue import add_encode_queue
+from .internal.module.video.item import create_directory, delete_directory
+
 import aiofiles
 from fastapi import FastAPI
 from fastapi import File, UploadFile
@@ -17,14 +19,75 @@ app.add_middleware(
 )
 
 
+@app.on_event("startup")
+async def startup_event():
+    pass
+
+
 @app.get("/")
 async def root():
     return {"message": "Hello Bigger Applications!"}
 
 
 @app.post("/upload")
-async def post_endpoint(in_file: UploadFile = File(...)):
+async def post_endpoint(
+        year: int,
+        cid: str,
+        title: str,
+        explanation: str,
+        in_file: UploadFile = File(...),):
+    """
+    動画アップロード用\n
+    \n
+    引数\n
+    in_file :  [動画ファイル]\n
+    year    :  [年度]\n
+    cid      :  [授業コード]\n
+    title     : [動画タイトル]\n
+    explanation : [動画説明]\n
+    """
 
+    created_dir = create_directory(year, cid, title, explanation)
+    filename_extension = "".join(in_file.filename.split(".")[-1:])
+    video_file_path = f"./{created_dir}/1.{filename_extension}"
+    async with aiofiles.open(video_file_path, 'wb') as out_file:
+        while True:
+            # 書き込みサイズ(MB)
+            chunk = 4
+            content = await in_file.read(chunk * 1048576)  # async read chunk
+            if content:
+                await out_file.write(content)  # async write chunk
+            else:
+                break
+
+    # await add_encode_queue("./video", "1.mp4", height=360)
+    await add_encode_queue(f"./{created_dir}", f"1.{filename_extension}", height=160)
+
+    return {"Result": "OK"}
+
+
+@app.post("/delete")
+async def video_delete(year: int, cid: str, vid: str):
+    """
+    動画削除用\n
+
+    引数\n
+    year    :  [年度]\n
+    cid      :  [授業コード]\n
+    vid      :  [動画コード]\n
+    """
+    return {"Result": "OK"}
+
+
+@app.post("/updatevideo")
+async def update_video(
+        year: int,
+        cid: str,
+        vid: str,
+        in_file: UploadFile = File(...)):
+    """
+    動画修正用
+    """
     async with aiofiles.open("./video/1.mp4", 'wb') as out_file:
         while True:
             # 書き込みサイズ(MB)
@@ -34,8 +97,32 @@ async def post_endpoint(in_file: UploadFile = File(...)):
                 await out_file.write(content)  # async write chunk
             else:
                 break
-    
-    #await add_encode_queue("./video", "1.mp4", height=360)
+
+    # await add_encode_queue("./video", "1.mp4", height=360)
     await add_encode_queue("./video", "1.mp4", height=160)
 
+
+@app.post("/updateinfo")
+async def update_info(
+        year: int,
+        cid: str,
+        title: str,
+        explanation: str,
+):
+    """
+    info修正用
+    """
+    return {"Result": "OK"}
+
+
+@app.get("/videolist")
+async def video_list(year: int, cid: str):
+    """
+    動画一覧取得用
+    """
+    return {"Result": "OK"}
+
+
+@app.get("/linklist")
+async def linklist(year: int, cid: str):
     return {"Result": "OK"}
