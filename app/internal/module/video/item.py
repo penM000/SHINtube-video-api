@@ -3,6 +3,24 @@ import random
 import string
 import json
 import shutil
+import glob
+import aiofiles
+
+
+import asyncio
+from functools import wraps, partial
+
+
+def async_wrap(func):
+    @wraps(func)
+    async def run(*args, loop=None, executor=None, **kwargs):
+        if loop is None:
+            loop = asyncio.get_event_loop()
+        pfunc = partial(func, *args, **kwargs)
+        return await loop.run_in_executor(executor, pfunc)
+    return run
+
+
 # 保存先のビデオフォルダ
 video_dir = "video"
 
@@ -38,14 +56,36 @@ def create_directory(year, cid, title, explanation) -> str:
 
 
 def delete_directory(year, cid, vid):
-    _delete_dir = "/".join([video_dir, year, cid, vid])
+    _delete_dir = "/".join([video_dir, str(year), cid, vid])
     shutil.rmtree(_delete_dir)
+    return True
+
+
+def delete_video(year, cid, vid):
+    _delete_dir = "/".join([video_dir, str(year), cid, vid])
+    for filepath in glob.glob(f"{_delete_dir}/*"):
+        if "info.json" in filepath:
+            pass
+        else:
+            os.remove(filepath)
+    # 既存のjsonを読み込み
+    json_file = "/".join([video_dir, str(year), cid, vid, "info.json"])
+    try:
+        with open(json_file) as f:
+            _dict = json.load(f)
+    except FileNotFoundError:
+        return False
+    # jsonの更新
+    _dict["resolution"] = []
+    # jsonの書き込み
+    with open(json_file) as f:
+        json.dump(_dict, f, indent=4)
     return True
 
 
 def update_json(year, cid, vid, title, explanation):
     # 既存のjsonを読み込み
-    json_file = "/".join([video_dir, year, cid, vid, "info.json"])
+    json_file = "/".join([video_dir, str(year), cid, vid, "info.json"])
     try:
         with open(json_file) as f:
             _dict = json.load(f)
@@ -58,6 +98,28 @@ def update_json(year, cid, vid, title, explanation):
     with open(json_file) as f:
         json.dump(_dict, f, indent=4)
     return True
+
+
+async def list_video_id(year, cid):
+    _video_dir = "/".join([video_dir, str(year), cid])
+    temp = await async_wrap(glob.glob)(f"{_video_dir}/*")
+    return [video_id.split("/")[-1]
+            for video_id in temp]
+
+
+async def list_link(year, cid):
+    _video_dir = "/".join([video_dir, str(year), cid])
+    temp = await async_wrap(glob.glob)(f"{_video_dir}/*")
+    result = {}
+    for link_path in temp:
+        json_file = link_path + "/info.json"
+        try:
+            with open(json_file) as f:
+                _dict = await async_wrap(json.load)(f)
+        except FileNotFoundError:
+            pass
+        result[link_path.split("/")[-1]] = _dict["title"]
+    return result
 
 
 def add_resolution(folderpath, resolution):

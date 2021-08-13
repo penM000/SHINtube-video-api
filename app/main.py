@@ -1,6 +1,11 @@
 
 from .internal.module.video.queue import add_encode_queue
-from .internal.module.video.item import create_directory, delete_directory
+from .internal.module.video.item import (
+    create_directory,
+    delete_directory,
+    delete_video,
+    update_json,
+    list_video_id, list_link)
 
 import aiofiles
 from fastapi import FastAPI
@@ -76,6 +81,7 @@ async def video_delete(year: int, cid: str, vid: str):
     cid      :  [授業コード]\n
     vid      :  [動画コード]\n
     """
+    delete_directory(year, cid, vid)
     return {"Result": "OK"}
 
 
@@ -88,7 +94,10 @@ async def update_video(
     """
     動画修正用
     """
-    async with aiofiles.open("./video/1.mp4", 'wb') as out_file:
+    delete_video(year, cid, vid)
+    filename_extension = "".join(in_file.filename.split(".")[-1:])
+
+    async with aiofiles.open(f"video/{year}/{cid}/{vid}/1.{filename_extension}", 'wb') as out_file:
         while True:
             # 書き込みサイズ(MB)
             chunk = 4
@@ -99,19 +108,21 @@ async def update_video(
                 break
 
     # await add_encode_queue("./video", "1.mp4", height=360)
-    await add_encode_queue("./video", "1.mp4", height=160)
+    await add_encode_queue(f"video/{year}/{cid}/{vid}", f"1.{filename_extension}", height=160)
 
 
 @app.post("/updateinfo")
 async def update_info(
         year: int,
         cid: str,
+        vid: str,
         title: str,
         explanation: str,
 ):
     """
     info修正用
     """
+    update_json(year, cid, vid, title, explanation)
     return {"Result": "OK"}
 
 
@@ -120,9 +131,10 @@ async def video_list(year: int, cid: str):
     """
     動画一覧取得用
     """
-    return {"Result": "OK"}
+
+    return await list_video_id(year, cid)
 
 
 @app.get("/linklist")
 async def linklist(year: int, cid: str):
-    return {"Result": "OK"}
+    return await list_link(year, cid)
