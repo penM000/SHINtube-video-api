@@ -33,13 +33,43 @@ def GetRandomStr(num) -> str:
     return ''.join([random.choice(dat) for i in range(num)])
 
 
+def read_json(json_file):
+    try:
+        with open(json_file) as f:
+            _dict = json.load(f)
+    except FileNotFoundError:
+        return False
+    else:
+        return _dict
+
+
+def write_json(json_file, _dict):
+    try:
+        with open(json_file, "w") as f:
+            json.dump(_dict, f, indent=4)
+    except BaseException:
+        return False
+    else:
+        return True
+
+
+def write_playlist(playlist_file: str, _list: list, add=False):
+    if add:
+        mode = "a"
+    else:
+        mode = "w"
+    with open(playlist_file, mode) as f:
+        f.writelines('\n'.join(_list))
+        f.write("\n")
+
+
 def create_directory(year, cid, title, explanation) -> str:
-    _create_dir = None
+    _created_dir = None
     while True:
         try:
-            _create_dir = "/".join([video_dir, str(year),
-                                   cid, GetRandomStr(10)])
-            os.makedirs(_create_dir)
+            _created_dir = "/".join([video_dir, str(year),
+                                     cid, GetRandomStr(10)])
+            os.makedirs(_created_dir)
         except FileExistsError:
             pass
         else:
@@ -50,9 +80,10 @@ def create_directory(year, cid, title, explanation) -> str:
         "resolution": [],
         "encode_tasks": []
     }
-    with open(_create_dir + "/info.json", "w") as f:
-        json.dump(dict_template, f, indent=4)
-    return _create_dir
+    write_json(_created_dir + "/info.json", dict_template)
+    playlist_template = ["#EXTM3U", "#EXT-X-VERSION:3"]
+    write_playlist(_created_dir + "/playlist.m3u8", playlist_template)
+    return _created_dir
 
 
 def delete_directory(year, cid, vid):
@@ -68,36 +99,36 @@ def delete_video(year, cid, vid):
             pass
         else:
             os.remove(filepath)
+    # プレイリストの初期化
+    playlist_file = "/".join([video_dir, str(year), cid, vid, "playlist.m3u8"])
+    playlist_template = ["#EXTM3U", "#EXT-X-VERSION:3"]
+    write_playlist(playlist_file, playlist_template)
     # 既存のjsonを読み込み
     json_file = "/".join([video_dir, str(year), cid, vid, "info.json"])
-    try:
-        with open(json_file) as f:
-            _dict = json.load(f)
-    except FileNotFoundError:
+    _dict = read_json(json_file)
+    if not _dict:
         return False
     # jsonの更新
     _dict["resolution"] = []
     # jsonの書き込み
-    with open(json_file) as f:
-        json.dump(_dict, f, indent=4)
-    return True
+    if write_json(json_file, _dict):
+        return True
+    return False
 
 
 def update_json(year, cid, vid, title, explanation):
     # 既存のjsonを読み込み
     json_file = "/".join([video_dir, str(year), cid, vid, "info.json"])
-    try:
-        with open(json_file) as f:
-            _dict = json.load(f)
-    except FileNotFoundError:
+    _dict = read_json(json_file)
+    if not _dict:
         return False
     # jsonの更新
     _dict["title"] = title
     _dict["explanation"] = explanation
     # jsonの書き込み
-    with open(json_file, "w") as f:
-        json.dump(_dict, f, indent=4)
-    return True
+    if write_json(json_file, _dict):
+        return True
+    return False
 
 
 async def list_video_id(year, cid):
@@ -118,38 +149,53 @@ async def list_link(year, cid):
                 _dict = await async_wrap(json.load)(f)
         except FileNotFoundError:
             pass
-        result[link_path.split("/")[-1]] = _dict["title"]
+        result[link_path.split("/")[-1]] = _dict
     return result
 
 
 def add_resolution(folderpath, resolution):
+    _list = {
+        240: [
+            "#EXT-X-STREAM-INF:BANDWIDTH=500000,RESOLUTION=426x240",
+            "240p.m3u8"],
+        360: [
+            "#EXT-X-STREAM-INF:BANDWIDTH=1000000,RESOLUTION=640x360",
+            "360p.m3u8"],
+        480: [
+            "#EXT-X-STREAM-INF:BANDWIDTH=2500000,RESOLUTION=854x480",
+            "480p.m3u8"],
+        720: [
+            "#EXT-X-STREAM-INF:BANDWIDTH=5000000,RESOLUTION=1280x720",
+            "720p.m3u8"],
+        1080: [
+            "#EXT-X-STREAM-INF:BANDWIDTH=8000000,RESOLUTION=1920x1080",
+            "1080p.m3u8"],
+    }
+    playlist = "/".join([folderpath, "playlist.m3u8"])
+    write_playlist(playlist, _list[int(resolution)], add=True)
     # 既存のjsonを読み込み
     json_file = "/".join([folderpath, "info.json"])
-    try:
-        with open(json_file) as f:
-            _dict = json.load(f)
-    except FileNotFoundError:
+    _dict = read_json(json_file)
+    if not _dict:
         return False
     # 画質の追加
-    _dict["resolution"].append(resolution)
-    _dict["encode_tasks"].remove(resolution)
+    _dict["resolution"].append(f"{resolution}p")
+    _dict["encode_tasks"].remove(f"{resolution}p")
     # jsonの書き込み
-    with open(json_file, "w") as f:
-        json.dump(_dict, f, indent=4)
-    return True
+    if write_json(json_file, _dict):
+        return True
+    return False
 
 
 def add_resolution_task(folderpath, resolution):
     # 既存のjsonを読み込み
     json_file = "/".join([folderpath, "info.json"])
-    try:
-        with open(json_file) as f:
-            _dict = json.load(f)
-    except FileNotFoundError:
+    _dict = read_json(json_file)
+    if not _dict:
         return False
     # 画質の追加
-    _dict["encode_tasks"].append(resolution)
+    _dict["encode_tasks"].append(f"{resolution}p")
     # jsonの書き込み
-    with open(json_file, "w") as f:
-        json.dump(_dict, f, indent=4)
-    return True
+    if write_json(json_file, _dict):
+        return True
+    return False
