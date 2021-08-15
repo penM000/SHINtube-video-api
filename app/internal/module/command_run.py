@@ -12,12 +12,12 @@ async def command_run(cmd, cwd, normal_mode=True):
         stdout, stderr = await proc.communicate()
         if stdout:
             pass
-        # print(f'[stdout]\n{stdout.decode()}')
+            #print(f'[stdout]\n{stdout.decode()}')
         if stderr:
             pass
-            # print(f'[stderr]\n{stderr.decode()}')
+            #print(f'[stderr]\n{stderr.decode()}')
     else:
         while proc.returncode is None:
             line = await proc.stderr.readline()
-            print(line.decode().replace("\n", ""))
+            #print(line.decode().replace("\n", ""))
     return proc.returncode

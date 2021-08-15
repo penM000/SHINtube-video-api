@@ -66,7 +66,8 @@ async def post_endpoint(
                 break
 
     # await add_encode_queue("./video", "1.mp4", height=360)
-    await add_encode_queue(f"./{created_dir}", f"1.{filename_extension}", height=160)
+    await add_encode_queue(f"./{created_dir}", f"1.{filename_extension}", height=360)
+    await add_encode_queue(f"./{created_dir}", f"1.{filename_extension}", height=240)
 
     return {"Result": "OK"}
 
@@ -108,7 +109,7 @@ async def update_video(
                 break
 
     # await add_encode_queue("./video", "1.mp4", height=360)
-    await add_encode_queue(f"video/{year}/{cid}/{vid}", f"1.{filename_extension}", height=160)
+    await add_encode_queue(f"video/{year}/{cid}/{vid}", f"1.{filename_extension}", height=240)
 
 
 @app.post("/updateinfo")
