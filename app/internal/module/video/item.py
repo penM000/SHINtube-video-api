@@ -5,7 +5,7 @@ import json
 import shutil
 import glob
 import aiofiles
-
+import datetime
 
 import asyncio
 from functools import wraps, partial
@@ -63,13 +63,13 @@ def write_playlist(playlist_file: str, _list: list, add=False):
         f.write("\n")
 
 
-def create_directory(year, cid, title, explanation) -> str:
+async def create_directory(year, cid, title, explanation) -> str:
     _created_dir = None
     while True:
         try:
             _created_dir = "/".join([video_dir, str(year),
                                      cid, GetRandomStr(10)])
-            os.makedirs(_created_dir)
+            await async_wrap(os.makedirs)(_created_dir)
         except FileExistsError:
             pass
         else:
@@ -77,6 +77,8 @@ def create_directory(year, cid, title, explanation) -> str:
     dict_template = {
         "title": title,
         "explanation": explanation,
+        "created_at": datetime.datetime.today().isoformat(),
+        "updated_at": datetime.datetime.today().isoformat(),
         "resolution": [],
         "encode_tasks": []
     }
@@ -86,9 +88,9 @@ def create_directory(year, cid, title, explanation) -> str:
     return _created_dir
 
 
-def delete_directory(year, cid, vid):
+async def delete_directory(year, cid, vid):
     _delete_dir = "/".join([video_dir, str(year), cid, vid])
-    shutil.rmtree(_delete_dir)
+    await async_wrap(shutil.rmtree)(_delete_dir)
     return True
 
 
@@ -110,6 +112,8 @@ def delete_video(year, cid, vid):
         return False
     # jsonの更新
     _dict["resolution"] = []
+    _dict["encode_tasks"]= []
+    _dict["updated_at"] = datetime.datetime.today().isoformat()
     # jsonの書き込み
     if write_json(json_file, _dict):
         return True
