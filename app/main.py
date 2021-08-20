@@ -9,7 +9,7 @@ from .internal.module.video.item import (
 
 import aiofiles
 from fastapi import FastAPI
-from fastapi import File, UploadFile
+from fastapi import File, UploadFile, Form
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 
@@ -52,7 +52,43 @@ async def post_endpoint(
     explanation : [動画説明]\n
     """
 
-    created_dir = create_directory(year, cid, title, explanation)
+    created_dir = await create_directory(year, cid, title, explanation)
+    filename_extension = "".join(in_file.filename.split(".")[-1:])
+    video_file_path = f"./{created_dir}/1.{filename_extension}"
+    async with aiofiles.open(video_file_path, 'wb') as out_file:
+        while True:
+            # 書き込みサイズ(MB)
+            chunk = 4
+            content = await in_file.read(chunk * 1048576)  # async read chunk
+            if content:
+                await out_file.write(content)  # async write chunk
+            else:
+                break
+
+    await add_encode_queue(f"./{created_dir}", f"1.{filename_extension}")
+
+    return {"Result": "OK"}
+
+
+@app.post("/upload_form")
+async def post_endpoint_(
+        year: int = Form(...),
+        cid: str = Form(...),
+        title: str = Form(...),
+        explanation: str = Form(...),
+        in_file: UploadFile = File(...),):
+    """
+    動画アップロード用\n
+    \n
+    引数\n
+    in_file :  [動画ファイル]\n
+    year    :  [年度]\n
+    cid      :  [授業コード]\n
+    title     : [動画タイトル]\n
+    explanation : [動画説明]\n
+    """
+
+    created_dir = await create_directory(year, cid, title, explanation)
     filename_extension = "".join(in_file.filename.split(".")[-1:])
     video_file_path = f"./{created_dir}/1.{filename_extension}"
     async with aiofiles.open(video_file_path, 'wb') as out_file:
@@ -66,8 +102,7 @@ async def post_endpoint(
                 break
 
     # await add_encode_queue("./video", "1.mp4", height=360)
-    await add_encode_queue(f"./{created_dir}", f"1.{filename_extension}", height=360)
-    await add_encode_queue(f"./{created_dir}", f"1.{filename_extension}", height=240)
+    await add_encode_queue(f"./{created_dir}", f"1.{filename_extension}")
 
     return {"Result": "OK"}
 
@@ -82,7 +117,7 @@ async def video_delete(year: int, cid: str, vid: str):
     cid      :  [授業コード]\n
     vid      :  [動画コード]\n
     """
-    delete_directory(year, cid, vid)
+    await delete_directory(year, cid, vid)
     return {"Result": "OK"}
 
 
@@ -91,10 +126,13 @@ async def update_video(
         year: int,
         cid: str,
         vid: str,
+        title: str,
+        explanation: str,
         in_file: UploadFile = File(...)):
     """
     動画修正用
     """
+    update_json(year, cid, vid, title, explanation)
     delete_video(year, cid, vid)
     filename_extension = "".join(in_file.filename.split(".")[-1:])
 
@@ -108,8 +146,7 @@ async def update_video(
             else:
                 break
 
-    # await add_encode_queue("./video", "1.mp4", height=360)
-    await add_encode_queue(f"video/{year}/{cid}/{vid}", f"1.{filename_extension}", height=240)
+    await add_encode_queue(f"video/{year}/{cid}/{vid}", f"1.{filename_extension}")
 
 
 @app.post("/updateinfo")
