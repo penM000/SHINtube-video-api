@@ -1,5 +1,4 @@
 from ..command_run import command_run
-from .item import add_resolution
 import time
 
 bitrate_dict = {
@@ -25,17 +24,15 @@ async def soft_encode(folderpath: str, filename: str, width=1920, height=1080, t
         # f"-progress {folderpath}/progress.txt",
         "-crf 20",
         "-start_number 0",
-        "-hls_time 10",
+        "-hls_time 6",
         "-hls_list_size 0",
         "-f hls",
         # f"-s {width}x{height}",
-        f"-vf scale=-2:{height}",
+        f"-vf fps=30,scale=-2:{height}",
         f"{folderpath}/{height}p.m3u8"
     ]
-    exit_code = await command_run(" ".join(command), "./")
-    print(exit_code)
-    add_resolution(folderpath, height)
-    await thumbnail(folderpath, filename)
+    result = await command_run(" ".join(command), "./")
+    print(result.returncode)
     print(time.time() - now)
 
 
@@ -51,59 +48,58 @@ async def encode(folderpath: str, filename: str, width=1920, height=1080) -> boo
         "-filter_hw_device intel",
         f"-i {folderpath}/{filename}",
         "-vcodec h264_vaapi",
-        f"-vf 'format=nv12|vaapi,hwupload,scale_vaapi=w=-2:h={height}'",
+        f"-vf 'format=nv12|vaapi,hwupload,fps=30,scale_vaapi=w=-2:h={height}'",
         "-profile high",
         "-compression_level 0",
         "-start_number 0",
         f"-b:v {bitrate_dict[height]}",
-        "-hls_time 10",
+        "-rc_mode VBR",
+        "-hls_time 6",
         "-hls_list_size 0",
         "-f hls",
         f"{folderpath}/{height}p.m3u8"
     ]
-    exit_code = await command_run(" ".join(command), "./")
-    print(exit_code)
-    add_resolution(folderpath, height)
-    await thumbnail(folderpath, filename)
+    result = await command_run(" ".join(command), "./")
+    print(result.returncode)
     print(time.time() - now)
 
 
 async def thumbnail(folderpath: str, filename: str) -> bool:
-    await command_run("chmod +x ffmpeg", "./bin/")
     command = [
-        "./bin/ffmpeg",
+        "ffmpeg",
         "-y",
         f"-i {folderpath}/{filename}",
         "-ss 5",
         "-vframes 1",
         "-f image2",
         # f"-s {width}x{height}",
-        "-vf scale=-1:360",
+        "-vf scale=-2:360",
         f"{folderpath}/thumbnail_360.jpg"
     ]
     await command_run(" ".join(command), "./")
     command = [
-        "./bin/ffmpeg",
+        "ffmpeg",
         "-y",
         f"-i {folderpath}/{filename}",
         "-ss 5",
         "-vframes 1",
         "-f image2",
         # f"-s {width}x{height}",
-        "-vf scale=-1:720",
+        "-vf scale=-2:720",
         f"{folderpath}/thumbnail_720.jpg"
     ]
     await command_run(" ".join(command), "./")
 
 
-async def get_video_resolution(folderpath: str, filename: str) -> bool:
+async def get_video_resolution(folderpath: str, filename: str) -> dict:
     command = [
         "ffprobe",
         "-v error",
         "-select_streams v:0",
-        "-show_entries stream=height",
-        "-of csv=p=0",
+        "-show_entries stream=width,height",
+        "-of csv=s=x:p=0",
         f"{folderpath}/{filename}",
-        f"> {folderpath}/result.txt"
     ]
-    await command_run(" ".join(command), "./")
+    result = await command_run(" ".join(command), "./")
+    return {"width": int(result.stdout.split("x")[0]),
+            "height": int(result.stdout.split("x")[1])}
