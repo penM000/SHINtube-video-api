@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .encode import encode, get_video_resolution, thumbnail
-from .item import add_resolution_task, add_resolution
+from .item import result_encode, add_encode_task
 
 
 @dataclass(order=True)
@@ -27,12 +27,15 @@ async def encode_worker(queue: QueueItem):
         print(queue_item.priority)
         # DBにprogressの更新
 
-        await encode(
+        result = await encode(
             folderpath=encode_config["folderpath"],
             filename=encode_config["filename"],
             height=encode_config["height"]
         )
-        add_resolution(encode_config["folderpath"], encode_config["height"])
+        result_encode(
+            encode_config["folderpath"],
+            encode_config["height"],
+            result)
 
         # DBにdoneの更新
         queue.task_done()
@@ -60,5 +63,5 @@ async def add_encode_queue(folderpath, filename):
             }
             queue_item = QueueItem(priority=height, item=encode_config)
             queue.put_nowait(queue_item)
-            add_resolution_task(folderpath, height)
+            add_encode_task(folderpath, height)
     await thumbnail(folderpath, filename)

@@ -5,7 +5,7 @@ from .internal.module.video.item import (
     delete_directory,
     delete_video,
     update_json,
-    list_video_id, list_link)
+    list_video_id, list_link, get_all_info)
 
 import aiofiles
 from fastapi import FastAPI
@@ -176,3 +176,8 @@ async def video_list(year: int, cid: str):
 @app.get("/linklist")
 async def linklist(year: int, cid: str):
     return await list_link(year, cid)
+
+
+@app.get("/all")
+async def test():
+    return get_all_info()

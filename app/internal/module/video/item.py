@@ -80,7 +80,8 @@ async def create_directory(year, cid, title, explanation) -> str:
         "created_at": datetime.datetime.today().isoformat(),
         "updated_at": datetime.datetime.today().isoformat(),
         "resolution": [],
-        "encode_tasks": []
+        "encode_tasks": [],
+        "encode_error": [],
     }
     write_json(_created_dir + "/info.json", dict_template)
     playlist_template = ["#EXTM3U", "#EXT-X-VERSION:3"]
@@ -112,7 +113,7 @@ def delete_video(year, cid, vid):
         return False
     # jsonの更新
     _dict["resolution"] = []
-    _dict["encode_tasks"]= []
+    _dict["encode_tasks"] = []
     _dict["updated_at"] = datetime.datetime.today().isoformat()
     # jsonの書き込み
     if write_json(json_file, _dict):
@@ -157,7 +158,7 @@ async def list_link(year, cid):
     return result
 
 
-def add_resolution(folderpath, resolution):
+def result_encode(folderpath, resolution, result=True):
     _list = {
         240: [
             "#EXT-X-STREAM-INF:BANDWIDTH=500000,RESOLUTION=426x240",
@@ -175,23 +176,27 @@ def add_resolution(folderpath, resolution):
             "#EXT-X-STREAM-INF:BANDWIDTH=8000000,RESOLUTION=1920x1080",
             "1080p.m3u8"],
     }
-    playlist = "/".join([folderpath, "playlist.m3u8"])
-    write_playlist(playlist, _list[int(resolution)], add=True)
     # 既存のjsonを読み込み
     json_file = "/".join([folderpath, "info.json"])
     _dict = read_json(json_file)
     if not _dict:
         return False
-    # 画質の追加
-    _dict["resolution"].append(f"{resolution}p")
-    _dict["encode_tasks"].remove(f"{resolution}p")
+    if result:
+        playlist = "/".join([folderpath, "playlist.m3u8"])
+        write_playlist(playlist, _list[int(resolution)], add=True)
+        # 画質の追加
+        _dict["resolution"].append(f"{resolution}p")
+        _dict["encode_tasks"].remove(f"{resolution}p")
+    else:
+        _dict["encode_error"].append(f"{resolution}p")
+        _dict["encode_tasks"].remove(f"{resolution}p")
     # jsonの書き込み
     if write_json(json_file, _dict):
         return True
     return False
 
 
-def add_resolution_task(folderpath, resolution):
+def add_encode_task(folderpath, resolution):
     # 既存のjsonを読み込み
     json_file = "/".join([folderpath, "info.json"])
     _dict = read_json(json_file)
@@ -203,3 +208,12 @@ def add_resolution_task(folderpath, resolution):
     if write_json(json_file, _dict):
         return True
     return False
+
+
+def get_all_info():
+    import time
+    now = time.time()
+    return [
+        glob.glob(
+            f"./{video_dir}/*/*/*/info.json",),
+        time.time() - now]

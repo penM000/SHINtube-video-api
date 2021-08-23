@@ -32,12 +32,13 @@ async def soft_encode(folderpath: str, filename: str, width=1920, height=1080, t
         f"{folderpath}/{height}p.m3u8"
     ]
     result = await command_run(" ".join(command), "./")
-    print(result.returncode)
-    print(time.time() - now)
+    if result.returncode == 0:
+        return True
+    else:
+        return False
 
 
 async def encode(folderpath: str, filename: str, width=1920, height=1080) -> bool:
-    now = time.time()
     command = [
         "ffmpeg",
         "-y",
@@ -60,8 +61,10 @@ async def encode(folderpath: str, filename: str, width=1920, height=1080) -> boo
         f"{folderpath}/{height}p.m3u8"
     ]
     result = await command_run(" ".join(command), "./")
-    print(result.returncode)
-    print(time.time() - now)
+    if result.returncode == 0:
+        return True
+    else:
+        return False
 
 
 async def thumbnail(folderpath: str, filename: str) -> bool:
