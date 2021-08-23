@@ -1,4 +1,5 @@
 import asyncio
+import multiprocessing
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -51,7 +52,7 @@ async def soft_encode_worker(queue: QueueItem):
             folderpath=encode_config["folderpath"],
             filename=encode_config["filename"],
             height=encode_config["height"],
-            thread=2
+            thread=int(multiprocessing.cpu_count())-2
         )
         result_encode(
             encode_config["folderpath"],
@@ -67,7 +68,7 @@ async def add_encode_queue(folderpath, filename):
     global encode_workers
     if queue is None:
         queue = asyncio.PriorityQueue()
-        for i in range(1):
+        for i in range(2):
             task = asyncio.create_task(vaapi_encode_worker(queue))
             encode_tasks.append(task)
 
