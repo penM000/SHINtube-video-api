@@ -3,7 +3,7 @@ import multiprocessing
 from dataclasses import dataclass, field
 from typing import Any
 
-from .encode import soft_encode, vaapi_encode, get_video_resolution, thumbnail
+from .encode import soft_encode, vaapi_encode, nvenc_encode, get_video_resolution, thumbnail, encode_test
 from .item import result_encode, add_encode_task
 
 
@@ -41,6 +41,27 @@ async def vaapi_encode_worker(queue: QueueItem):
         queue.task_done()
 
 
+async def nvenc_encode_worker(queue: QueueItem):
+    while True:
+        # Get a "work item" out of the queue.
+        queue_item = await queue.get()
+        encode_config = queue_item.item
+        # DBにprogressの更新
+
+        result = await nvenc_encode(
+            folderpath=encode_config["folderpath"],
+            filename=encode_config["filename"],
+            height=encode_config["height"]
+        )
+        result_encode(
+            encode_config["folderpath"],
+            encode_config["height"],
+            result)
+
+        # DBにdoneの更新
+        queue.task_done()
+
+
 async def soft_encode_worker(queue: QueueItem):
     while True:
         # Get a "work item" out of the queue.
@@ -52,7 +73,7 @@ async def soft_encode_worker(queue: QueueItem):
             folderpath=encode_config["folderpath"],
             filename=encode_config["filename"],
             height=encode_config["height"],
-            thread=int(multiprocessing.cpu_count())-2
+            thread=int(multiprocessing.cpu_count()) - 2
         )
         result_encode(
             encode_config["folderpath"],
@@ -68,18 +89,23 @@ async def add_encode_queue(folderpath, filename):
     global encode_workers
     if queue is None:
         queue = asyncio.PriorityQueue()
-        for i in range(2):
+        result = await encode_test()
+        if result["vaapi"]:
             task = asyncio.create_task(vaapi_encode_worker(queue))
             encode_tasks.append(task)
+        if result["nvenc"]:
+            task = asyncio.create_task(nvenc_encode_worker(queue))
+            encode_tasks.append(task)
+        if result["soft"]:
+            task = asyncio.create_task(soft_encode_worker(queue))
+            encode_tasks.append(task)
 
-    # DBにwaitで登録
     resolution = await get_video_resolution(folderpath, filename)
     if not resolution:
         add_encode_task(folderpath, 1080)
         result_encode(folderpath, 1080, False)
         return
     video_size = [240, 360, 480, 720, 1080]
-    # video_size = [240, 360]
     for height in video_size:
         if resolution["height"] >= height:
             encode_config = {

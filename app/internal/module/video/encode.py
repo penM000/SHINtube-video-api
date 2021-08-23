@@ -1,5 +1,6 @@
 from ..command_run import command_run
 
+
 bitrate_dict = {
     1080: "8M",
     720: "5M",
@@ -11,9 +12,9 @@ bitrate_dict = {
 
 
 async def soft_encode(folderpath: str, filename: str, width=1920, height=1080, thread=1) -> bool:
-    await command_run("chmod +x ffmpeg", "./bin/")
+
     command = [
-        "./bin/ffmpeg",
+        "ffmpeg",
         "-y",
         f"-threads {thread}",
         f"-i {folderpath}/{filename}",
@@ -62,12 +63,15 @@ async def vaapi_encode(folderpath: str, filename: str, width=1920, height=1080) 
     if result.returncode == 0:
         return True
     else:
+        print(result.stdout)
+        print(result.stderr)
         return False
 
 
 async def nvenc_encode(folderpath: str, filename: str, width=1920, height=1080) -> bool:
+    await command_run("chmod +x ffmpeg", "./bin/")
     command = [
-        "ffmpeg",
+        "./bin/ffmpeg",
         "-y",
         "-init_hw_device vaapi=intel:/dev/dri/renderD128",
         "-hwaccel vaapi",
@@ -150,5 +154,8 @@ async def encode_test():
         result["nvenc"] = True
     else:
         result["nvenc"] = False
+    if result["vaapi"] or result["nvenc"]:
+        result["soft"] = False
+    else:
+        result["soft"] = True
     return result
-    await soft_encode(folderpath, filename)
