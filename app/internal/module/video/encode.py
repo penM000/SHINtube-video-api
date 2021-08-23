@@ -1,5 +1,4 @@
 from ..command_run import command_run
-import time
 
 bitrate_dict = {
     1080: "8M",
@@ -13,7 +12,6 @@ bitrate_dict = {
 
 async def soft_encode(folderpath: str, filename: str, width=1920, height=1080, thread=1) -> bool:
     await command_run("chmod +x ffmpeg", "./bin/")
-    now = time.time()
     command = [
         "./bin/ffmpeg",
         "-y",
@@ -38,7 +36,36 @@ async def soft_encode(folderpath: str, filename: str, width=1920, height=1080, t
         return False
 
 
-async def encode(folderpath: str, filename: str, width=1920, height=1080) -> bool:
+async def vaapi_encode(folderpath: str, filename: str, width=1920, height=1080) -> bool:
+    command = [
+        "ffmpeg",
+        "-y",
+        "-init_hw_device vaapi=intel:/dev/dri/renderD128",
+        "-hwaccel vaapi",
+        "-hwaccel_output_format vaapi",
+        "-hwaccel_device intel",
+        "-filter_hw_device intel",
+        f"-i {folderpath}/{filename}",
+        "-vcodec h264_vaapi",
+        f"-vf 'format=nv12|vaapi,hwupload,fps=30,scale_vaapi=w=-2:h={height}'",
+        "-profile high",
+        "-compression_level 0",
+        "-start_number 0",
+        f"-b:v {bitrate_dict[height]}",
+        "-rc_mode VBR",
+        "-hls_time 6",
+        "-hls_list_size 0",
+        "-f hls",
+        f"{folderpath}/{height}p.m3u8"
+    ]
+    result = await command_run(" ".join(command), "./")
+    if result.returncode == 0:
+        return True
+    else:
+        return False
+
+
+async def nvenc_encode(folderpath: str, filename: str, width=1920, height=1080) -> bool:
     command = [
         "ffmpeg",
         "-y",
@@ -104,5 +131,24 @@ async def get_video_resolution(folderpath: str, filename: str) -> dict:
         f"{folderpath}/{filename}",
     ]
     result = await command_run(" ".join(command), "./")
-    return {"width": int(result.stdout.split("x")[0]),
-            "height": int(result.stdout.split("x")[1])}
+    try:
+        return {"width": int(result.stdout.split("x")[0]),
+                "height": int(result.stdout.split("x")[1])}
+    except Exception:
+        return False
+
+
+async def encode_test():
+    folderpath = "sample"
+    filename = "video.mp4"
+    result = {}
+    if await vaapi_encode(folderpath, filename):
+        result["vaapi"] = True
+    else:
+        result["vaapi"] = False
+    if await nvenc_encode(folderpath, filename):
+        result["nvenc"] = True
+    else:
+        result["nvenc"] = False
+    return result
+    await soft_encode(folderpath, filename)
