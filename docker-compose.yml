@@ -1,0 +1,40 @@
+version: '3.8'
+services:
+  web:
+    image: nginx
+
+    restart: always
+    ports:
+          - 8001:80
+    environment:
+      - apiserver=apiserver
+      - TZ=Asia/Tokyo
+    volumes:
+      - ./video:/var/www/html/video
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/mysite.template
+    command: /bin/bash -c  "envsubst '$$apiserver' < /etc/nginx/conf.d/mysite.template > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "3m"
+        max-file: "1"
+  
+  apiserver:
+    image: python:3.9
+    restart: always
+    environment:
+      - TZ=Asia/Tokyo
+    volumes:
+      - ./:/videoapi
+
+    devices:
+      - /dev/dri:/dev/dri
+      - /dev/dri/renderD128:/dev/dri/renderD128
+      - /dev/dri/card0:/dev/dri/card0
+      
+    command: /bin/sh -c  "cd videoapi &&./start.sh"
+    logging:
+     driver: "json-file"
+     options:
+       max-size: "10m"
+       max-file: "3"

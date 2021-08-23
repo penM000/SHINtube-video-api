@@ -1,4 +1,6 @@
 *.pyc
+*.ts
+*.m3u8
 bin/*
 video/*
 !.gitkeep
