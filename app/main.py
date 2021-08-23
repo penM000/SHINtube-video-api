@@ -5,7 +5,9 @@ from .internal.module.video.item import (
     delete_directory,
     delete_video,
     update_json,
-    list_video_id, list_link, get_all_info)
+    list_video_id, list_link, get_all_info, get_encode_tasks)
+
+from .internal.module.video.encode import encode_test
 
 import aiofiles
 from fastapi import FastAPI
@@ -14,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 
 app = FastAPI()
-app.mount("/video", StaticFiles(directory="./video"), name="video")
+#app.mount("/video", StaticFiles(directory="./video"), name="video")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -26,6 +28,12 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup_event():
+    tasks = await get_encode_tasks()
+    for task in tasks:
+        for encode_resolution in task["encode_tasks"]:
+            await add_encode_queue(folderpath=task["video_directory"],
+                                   filename=task["video_file_name"],
+                                   encode_resolution=int(encode_resolution[:-1]))
     pass
 
 
@@ -180,4 +188,9 @@ async def linklist(year: int, cid: str):
 
 @app.get("/all")
 async def test():
-    return get_all_info()
+    return await get_encode_tasks()
+
+
+@app.get("/encode_test")
+async def test2():
+    return await encode_test()

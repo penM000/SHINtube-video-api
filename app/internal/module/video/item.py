@@ -210,10 +210,25 @@ def add_encode_task(folderpath, resolution):
     return False
 
 
-def get_all_info():
-    import time
-    now = time.time()
-    return [
-        glob.glob(
-            f"./{video_dir}/*/*/*/info.json",),
-        time.time() - now]
+async def get_all_info():
+    json_files_path = await async_wrap(glob.glob)(
+        f"./{video_dir}/**/info.json",
+        recursive=True)
+    result = []
+    for json_file in json_files_path:
+        temp = await async_wrap(read_json)(json_file)
+        directory = "/".join(json_file.split("/")[:-1])
+        temp["video_directory"] = directory
+        temp["video_file_name"] = glob.glob(
+            f"{directory}/1.*")[0].split("/")[-1]
+        result.append(temp)
+    return result
+
+
+async def get_encode_tasks():
+    video_info = await get_all_info()
+    result = []
+    for info in video_info:
+        if len(info["encode_tasks"]) != 0:
+            result.append(info)
+    return result
