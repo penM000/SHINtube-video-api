@@ -107,7 +107,8 @@ async def add_encode_queue(folderpath, filename, encode_resolution="Auto"):
             encode_tasks.append(task)
     # 動画の形式確認
     input_video_resolution = await get_video_resolution(folderpath, filename)
-    if not input_video_resolution:
+    # print(input_video_resolution)
+    if not isinstance(input_video_resolution, dict):
         add_encode_task(folderpath, 1080)
         result_encode(folderpath, 1080, False)
         return
