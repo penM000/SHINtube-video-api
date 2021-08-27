@@ -190,6 +190,10 @@ def result_encode(folderpath, resolution, result=True):
     else:
         _dict["encode_error"].append(f"{resolution}p")
         _dict["encode_tasks"].remove(f"{resolution}p")
+    # 重複の削除
+    _dict["encode_tasks"] = list(set(_dict["encode_tasks"]))
+    _dict["resolution"] = list(set(_dict["resolution"]))
+    _dict["encode_error"] = list(set(_dict["encode_error"]))
     # jsonの書き込み
     if write_json(json_file, _dict):
         return True
@@ -202,8 +206,12 @@ def add_encode_task(folderpath, resolution):
     _dict = read_json(json_file)
     if not _dict:
         return False
+    if f"{resolution}p" in _dict["resolution"]:
+        return True
     # 画質の追加
     _dict["encode_tasks"].append(f"{resolution}p")
+    # 重複の削除
+    _dict["encode_tasks"] = list(set(_dict["encode_tasks"]))
     # jsonの書き込み
     if write_json(json_file, _dict):
         return True
@@ -217,6 +225,11 @@ async def get_all_info():
     result = []
     for json_file in json_files_path:
         temp = await async_wrap(read_json)(json_file)
+        for i in temp["encode_tasks"]:
+            if i in temp["resolution"]:
+                temp["encode_tasks"].remove(i)
+        write_json(json_file, temp)
+
         directory = "/".join(json_file.split("/")[:-1])
         temp["video_directory"] = directory
         temp["video_file_name"] = glob.glob(
@@ -229,6 +242,7 @@ async def get_encode_tasks():
     video_info = await get_all_info()
     result = []
     for info in video_info:
-        if len(info["encode_tasks"]) != 0:
-            result.append(info)
+        for i in info["encode_tasks"]:
+            if i not in info["resolution"]:
+                result.append(info)
     return result
