@@ -242,7 +242,6 @@ async def get_encode_tasks():
     video_info = await get_all_info()
     result = []
     for info in video_info:
-        for i in info["encode_tasks"]:
-            if i not in info["resolution"]:
-                result.append(info)
+        if len(info["encode_tasks"]) > 0:
+            result.append(info)
     return result
