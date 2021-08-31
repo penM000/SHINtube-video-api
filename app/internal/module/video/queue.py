@@ -38,7 +38,7 @@ async def vaapi_encode_worker(queue: QueueItem):
             filename=encode_config["filename"],
             height=encode_config["height"]
         )
-        result_encode(
+        await result_encode(
             encode_config["folderpath"],
             encode_config["height"],
             result)
@@ -59,7 +59,7 @@ async def nvenc_encode_worker(queue: QueueItem):
             filename=encode_config["filename"],
             height=encode_config["height"]
         )
-        result_encode(
+        await result_encode(
             encode_config["folderpath"],
             encode_config["height"],
             result)
@@ -81,7 +81,7 @@ async def soft_encode_worker(queue: QueueItem):
             height=encode_config["height"],
             thread=int(multiprocessing.cpu_count()) - 2
         )
-        result_encode(
+        await result_encode(
             encode_config["folderpath"],
             encode_config["height"],
             result)
@@ -110,7 +110,7 @@ async def add_encode_queue(folderpath, filename, encode_resolution="Auto"):
     # print(input_video_resolution)
     if not isinstance(input_video_resolution, dict):
         add_encode_task(folderpath, 1080)
-        result_encode(folderpath, 1080, False)
+        await result_encode(folderpath, 1080, False)
         return
 
     if encode_resolution == "Auto":

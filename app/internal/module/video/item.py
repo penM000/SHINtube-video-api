@@ -53,14 +53,45 @@ def write_json(json_file, _dict):
         return True
 
 
-def write_playlist(playlist_file: str, _list: list, add=False):
-    if add:
-        mode = "a"
-    else:
-        mode = "w"
-    with open(playlist_file, mode) as f:
-        f.writelines('\n'.join(_list))
-        f.write("\n")
+async def write_playlist(playlist_file: str, resolution_list: list):
+    """
+    m3u8のプレイリストを作成する関数
+    """
+    m3u8 = {
+        "init": ["#EXTM3U", "#EXT-X-VERSION:3"],
+        240: [
+            "#EXT-X-STREAM-INF:BANDWIDTH=500000,RESOLUTION=426x240",
+            "240p.m3u8"],
+        360: [
+            "#EXT-X-STREAM-INF:BANDWIDTH=1000000,RESOLUTION=640x360",
+            "360p.m3u8"],
+        480: [
+            "#EXT-X-STREAM-INF:BANDWIDTH=2500000,RESOLUTION=854x480",
+            "480p.m3u8"],
+        720: [
+            "#EXT-X-STREAM-INF:BANDWIDTH=5000000,RESOLUTION=1280x720",
+            "720p.m3u8"],
+        1080: [
+            "#EXT-X-STREAM-INF:BANDWIDTH=8000000,RESOLUTION=1920x1080",
+            "1080p.m3u8"],
+    }
+    write_data = []
+    # m3u8のヘッダー情報
+    write_data.extend(m3u8["init"])
+    # 解像度の情報追加
+    for resolution in resolution_list:
+        # 1080 or 1080p に対する対策
+        try:
+            resolution = int(resolution)
+        except ValueError:
+            resolution = int(resolution[:-1])
+
+        if resolution in m3u8:
+            write_data.extend(m3u8[resolution])
+    # 書き込み
+    async with aiofiles.open(playlist_file, mode="w") as f:
+        print('\n'.join(write_data))
+        await f.write('\n'.join(write_data))
 
 
 async def create_directory(year, cid, title, explanation) -> str:
@@ -84,8 +115,7 @@ async def create_directory(year, cid, title, explanation) -> str:
         "encode_error": [],
     }
     write_json(_created_dir + "/info.json", dict_template)
-    playlist_template = ["#EXTM3U", "#EXT-X-VERSION:3"]
-    write_playlist(_created_dir + "/playlist.m3u8", playlist_template)
+    await write_playlist(_created_dir + "/playlist.m3u8", [])
     return _created_dir
 
 
@@ -95,7 +125,7 @@ async def delete_directory(year, cid, vid):
     return True
 
 
-def delete_video(year, cid, vid):
+async def delete_video(year, cid, vid):
     _delete_dir = "/".join([video_dir, str(year), cid, vid])
     for filepath in glob.glob(f"{_delete_dir}/*"):
         if "info.json" in filepath:
@@ -104,8 +134,7 @@ def delete_video(year, cid, vid):
             os.remove(filepath)
     # プレイリストの初期化
     playlist_file = "/".join([video_dir, str(year), cid, vid, "playlist.m3u8"])
-    playlist_template = ["#EXTM3U", "#EXT-X-VERSION:3"]
-    write_playlist(playlist_file, playlist_template)
+    await write_playlist(playlist_file, [])
     # 既存のjsonを読み込み
     json_file = "/".join([video_dir, str(year), cid, vid, "info.json"])
     _dict = read_json(json_file)
@@ -130,6 +159,7 @@ def update_json(year, cid, vid, title, explanation):
     # jsonの更新
     _dict["title"] = title
     _dict["explanation"] = explanation
+    _dict["updated_at"] = datetime.datetime.today().isoformat()
     # jsonの書き込み
     if write_json(json_file, _dict):
         return True
@@ -158,32 +188,17 @@ async def list_link(year, cid):
     return result
 
 
-def result_encode(folderpath, resolution, result=True):
-    _list = {
-        240: [
-            "#EXT-X-STREAM-INF:BANDWIDTH=500000,RESOLUTION=426x240",
-            "240p.m3u8"],
-        360: [
-            "#EXT-X-STREAM-INF:BANDWIDTH=1000000,RESOLUTION=640x360",
-            "360p.m3u8"],
-        480: [
-            "#EXT-X-STREAM-INF:BANDWIDTH=2500000,RESOLUTION=854x480",
-            "480p.m3u8"],
-        720: [
-            "#EXT-X-STREAM-INF:BANDWIDTH=5000000,RESOLUTION=1280x720",
-            "720p.m3u8"],
-        1080: [
-            "#EXT-X-STREAM-INF:BANDWIDTH=8000000,RESOLUTION=1920x1080",
-            "1080p.m3u8"],
-    }
+async def result_encode(folderpath, resolution, result=True):
     # 既存のjsonを読み込み
     json_file = "/".join([folderpath, "info.json"])
     _dict = read_json(json_file)
+    # 重複の削除
+    _dict["encode_tasks"] = list(set(_dict["encode_tasks"]))
+    _dict["resolution"] = list(set(_dict["resolution"]))
+    _dict["encode_error"] = list(set(_dict["encode_error"]))
     if not _dict:
         return False
     if result:
-        playlist = "/".join([folderpath, "playlist.m3u8"])
-        write_playlist(playlist, _list[int(resolution)], add=True)
         # 画質の追加
         _dict["resolution"].append(f"{resolution}p")
         _dict["encode_tasks"].remove(f"{resolution}p")
@@ -194,6 +209,9 @@ def result_encode(folderpath, resolution, result=True):
     _dict["encode_tasks"] = list(set(_dict["encode_tasks"]))
     _dict["resolution"] = list(set(_dict["resolution"]))
     _dict["encode_error"] = list(set(_dict["encode_error"]))
+    # プレイリストに書き込み
+    playlist = "/".join([folderpath, "playlist.m3u8"])
+    await write_playlist(playlist, _dict["resolution"])
     # jsonの書き込み
     if write_json(json_file, _dict):
         return True
@@ -212,6 +230,8 @@ def add_encode_task(folderpath, resolution):
     _dict["encode_tasks"].append(f"{resolution}p")
     # 重複の削除
     _dict["encode_tasks"] = list(set(_dict["encode_tasks"]))
+    _dict["resolution"] = list(set(_dict["resolution"]))
+    _dict["encode_error"] = list(set(_dict["encode_error"]))
     # jsonの書き込み
     if write_json(json_file, _dict):
         return True
@@ -232,8 +252,11 @@ async def get_all_info():
 
         directory = "/".join(json_file.split("/")[:-1])
         temp["video_directory"] = directory
-        temp["video_file_name"] = glob.glob(
-            f"{directory}/1.*")[0].split("/")[-1]
+        try:
+            temp["video_file_name"] = glob.glob(
+                f"{directory}/1.*")[0].split("/")[-1]
+        except IndexError:
+            temp["video_file_name"] = None
         result.append(temp)
     return result
 

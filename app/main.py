@@ -141,7 +141,7 @@ async def update_video(
     動画修正用
     """
     update_json(year, cid, vid, title, explanation)
-    delete_video(year, cid, vid)
+    await delete_video(year, cid, vid)
     filename_extension = "".join(in_file.filename.split(".")[-1:])
 
     async with aiofiles.open(f"video/{year}/{cid}/{vid}/1.{filename_extension}", 'wb') as out_file:
