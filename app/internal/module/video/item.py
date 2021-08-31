@@ -97,7 +97,7 @@ async def write_playlist(playlist_file: str, resolution_list: list = []):
             write_data.extend(m3u8[resolution])
     # 書き込み
     async with aiofiles.open(playlist_file, mode="w") as f:
-        print('\n'.join(write_data))
+        #print('\n'.join(write_data))
         await f.write('\n'.join(write_data))
 
 
