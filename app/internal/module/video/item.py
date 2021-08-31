@@ -10,6 +10,9 @@ import datetime
 import asyncio
 from functools import wraps, partial
 
+# 保存先のビデオフォルダ
+video_dir = "video"
+
 
 def async_wrap(func):
     @wraps(func)
@@ -21,8 +24,11 @@ def async_wrap(func):
     return run
 
 
-# 保存先のビデオフォルダ
-video_dir = "video"
+def remove_duplicates(_dict: dict):
+    _dict["encode_tasks"] = list(set(_dict["encode_tasks"]))
+    _dict["resolution"] = list(set(_dict["resolution"]))
+    _dict["encode_error"] = list(set(_dict["encode_error"]))
+    return _dict
 
 
 def GetRandomStr(num) -> str:
@@ -44,6 +50,7 @@ def read_json(json_file):
 
 
 def write_json(json_file, _dict):
+    _dict["updated_at"] = datetime.datetime.today().isoformat()
     try:
         with open(json_file, "w") as f:
             json.dump(_dict, f, indent=4)
@@ -53,7 +60,7 @@ def write_json(json_file, _dict):
         return True
 
 
-async def write_playlist(playlist_file: str, resolution_list: list):
+async def write_playlist(playlist_file: str, resolution_list: list = []):
     """
     m3u8のプレイリストを作成する関数
     """
@@ -109,13 +116,12 @@ async def create_directory(year, cid, title, explanation) -> str:
         "title": title,
         "explanation": explanation,
         "created_at": datetime.datetime.today().isoformat(),
-        "updated_at": datetime.datetime.today().isoformat(),
         "resolution": [],
         "encode_tasks": [],
         "encode_error": [],
     }
     write_json(_created_dir + "/info.json", dict_template)
-    await write_playlist(_created_dir + "/playlist.m3u8", [])
+    await write_playlist(_created_dir + "/playlist.m3u8")
     return _created_dir
 
 
@@ -134,7 +140,7 @@ async def delete_video(year, cid, vid):
             os.remove(filepath)
     # プレイリストの初期化
     playlist_file = "/".join([video_dir, str(year), cid, vid, "playlist.m3u8"])
-    await write_playlist(playlist_file, [])
+    await write_playlist(playlist_file)
     # 既存のjsonを読み込み
     json_file = "/".join([video_dir, str(year), cid, vid, "info.json"])
     _dict = read_json(json_file)
@@ -143,7 +149,8 @@ async def delete_video(year, cid, vid):
     # jsonの更新
     _dict["resolution"] = []
     _dict["encode_tasks"] = []
-    _dict["updated_at"] = datetime.datetime.today().isoformat()
+    _dict["encode_error"] = []
+
     # jsonの書き込み
     if write_json(json_file, _dict):
         return True
@@ -159,7 +166,6 @@ def update_json(year, cid, vid, title, explanation):
     # jsonの更新
     _dict["title"] = title
     _dict["explanation"] = explanation
-    _dict["updated_at"] = datetime.datetime.today().isoformat()
     # jsonの書き込み
     if write_json(json_file, _dict):
         return True
@@ -193,9 +199,7 @@ async def result_encode(folderpath, resolution, result=True):
     json_file = "/".join([folderpath, "info.json"])
     _dict = read_json(json_file)
     # 重複の削除
-    _dict["encode_tasks"] = list(set(_dict["encode_tasks"]))
-    _dict["resolution"] = list(set(_dict["resolution"]))
-    _dict["encode_error"] = list(set(_dict["encode_error"]))
+    _dict = remove_duplicates(_dict)
     if not _dict:
         return False
     if result:
@@ -206,9 +210,7 @@ async def result_encode(folderpath, resolution, result=True):
         _dict["encode_error"].append(f"{resolution}p")
         _dict["encode_tasks"].remove(f"{resolution}p")
     # 重複の削除
-    _dict["encode_tasks"] = list(set(_dict["encode_tasks"]))
-    _dict["resolution"] = list(set(_dict["resolution"]))
-    _dict["encode_error"] = list(set(_dict["encode_error"]))
+    _dict = remove_duplicates(_dict)
     # プレイリストに書き込み
     playlist = "/".join([folderpath, "playlist.m3u8"])
     await write_playlist(playlist, _dict["resolution"])
@@ -229,9 +231,7 @@ def add_encode_task(folderpath, resolution):
     # 画質の追加
     _dict["encode_tasks"].append(f"{resolution}p")
     # 重複の削除
-    _dict["encode_tasks"] = list(set(_dict["encode_tasks"]))
-    _dict["resolution"] = list(set(_dict["resolution"]))
-    _dict["encode_error"] = list(set(_dict["encode_error"]))
+    _dict = remove_duplicates(_dict)
     # jsonの書き込み
     if write_json(json_file, _dict):
         return True
