@@ -109,7 +109,7 @@ async def add_encode_queue(folderpath, filename, encode_resolution="Auto"):
     input_video_resolution = await get_video_resolution(folderpath, filename)
     # print(input_video_resolution)
     if not isinstance(input_video_resolution, dict):
-        add_encode_task(folderpath, 1080)
+        await add_encode_task(folderpath, 1080)
         await result_encode(folderpath, 1080, False)
         return
 
@@ -124,7 +124,7 @@ async def add_encode_queue(folderpath, filename, encode_resolution="Auto"):
                 }
                 queue_item = QueueItem(priority=height, item=encode_config)
                 queue.put_nowait(queue_item)
-                add_encode_task(folderpath, height)
+                await add_encode_task(folderpath, height)
     else:
         height = int(encode_resolution)
         encode_config = {
@@ -134,5 +134,5 @@ async def add_encode_queue(folderpath, filename, encode_resolution="Auto"):
         }
         queue_item = QueueItem(priority=height, item=encode_config)
         queue.put_nowait(queue_item)
-        add_encode_task(folderpath, height)
+        await add_encode_task(folderpath, height)
     await thumbnail(folderpath, filename)

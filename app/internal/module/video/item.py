@@ -10,6 +10,8 @@ import datetime
 import asyncio
 from functools import wraps, partial
 
+from fastapi import File, UploadFile
+
 # 保存先のビデオフォルダ
 video_dir = "video"
 
@@ -39,7 +41,7 @@ def GetRandomStr(num) -> str:
     return ''.join([random.choice(dat) for i in range(num)])
 
 
-def read_json(json_file):
+def read_json2(json_file):
     try:
         with open(json_file) as f:
             _dict = json.load(f)
@@ -49,8 +51,25 @@ def read_json(json_file):
         return _dict
 
 
+async def read_json(json_file):
+    try:
+        async with aiofiles.open(json_file, "r") as f:
+            json_str = await f.read()
+            _dict = json.loads(json_str)
+    except FileNotFoundError:
+        return False
+    else:
+        return _dict
+
+
 def write_json(json_file, _dict):
+    # 重複の削除
+    _dict = remove_duplicates(_dict)
     _dict["updated_at"] = datetime.datetime.today().isoformat()
+    for i in _dict["encode_tasks"]:
+        if i in _dict["resolution"]:
+            _dict["encode_tasks"].remove(i)
+
     try:
         with open(json_file, "w") as f:
             json.dump(_dict, f, indent=4)
@@ -60,7 +79,7 @@ def write_json(json_file, _dict):
         return True
 
 
-async def write_playlist(playlist_file: str, resolution_list: list = []):
+async def write_playlist(playlist_file: str, resolution: str = "init"):
     """
     m3u8のプレイリストを作成する関数
     """
@@ -83,22 +102,23 @@ async def write_playlist(playlist_file: str, resolution_list: list = []):
             "1080p.m3u8"],
     }
     write_data = []
-    # m3u8のヘッダー情報
-    write_data.extend(m3u8["init"])
     # 解像度の情報追加
-    for resolution in resolution_list:
-        # 1080 or 1080p に対する対策
+    # 1080 or 1080p に対する対策
+    if resolution == "init":
+        write_data.extend(m3u8["init"])
+        write_mode = "w"
+    else:
+        write_mode = "a"
         try:
             resolution = int(resolution)
         except ValueError:
             resolution = int(resolution[:-1])
-
         if resolution in m3u8:
             write_data.extend(m3u8[resolution])
     # 書き込み
-    async with aiofiles.open(playlist_file, mode="w") as f:
-        #print('\n'.join(write_data))
-        await f.write('\n'.join(write_data))
+    async with aiofiles.open(playlist_file, mode=write_mode) as f:
+        # print('\n'.join(write_data))
+        await f.write("\n".join(write_data) + "\n")
 
 
 async def create_directory(year, cid, title, explanation) -> str:
@@ -143,7 +163,7 @@ async def delete_video(year, cid, vid):
     await write_playlist(playlist_file)
     # 既存のjsonを読み込み
     json_file = "/".join([video_dir, str(year), cid, vid, "info.json"])
-    _dict = read_json(json_file)
+    _dict = await read_json(json_file)
     if not _dict:
         return False
     # jsonの更新
@@ -157,10 +177,10 @@ async def delete_video(year, cid, vid):
     return False
 
 
-def update_json(year, cid, vid, title, explanation):
+async def update_json(year, cid, vid, title, explanation):
     # 既存のjsonを読み込み
     json_file = "/".join([video_dir, str(year), cid, vid, "info.json"])
-    _dict = read_json(json_file)
+    _dict = await read_json(json_file)
     if not _dict:
         return False
     # jsonの更新
@@ -186,20 +206,21 @@ async def list_link(year, cid):
     for link_path in temp:
         json_file = link_path + "/info.json"
         try:
-            with open(json_file) as f:
-                _dict = await async_wrap(json.load)(f)
+            async with aiofiles.open(json_file, "r") as f:
+                json_str = await f.read()
+                _dict = json.loads(json_str)
         except FileNotFoundError:
             pass
-        result[link_path.split("/")[-1]] = _dict
+        else:
+            result[link_path.split("/")[-1]] = _dict
     return result
 
 
 async def result_encode(folderpath, resolution, result=True):
     # 既存のjsonを読み込み
     json_file = "/".join([folderpath, "info.json"])
-    _dict = read_json(json_file)
-    # 重複の削除
-    _dict = remove_duplicates(_dict)
+    _dict = await read_json(json_file)
+
     if not _dict:
         return False
     if result:
@@ -209,29 +230,23 @@ async def result_encode(folderpath, resolution, result=True):
     else:
         _dict["encode_error"].append(f"{resolution}p")
         _dict["encode_tasks"].remove(f"{resolution}p")
-    # 重複の削除
-    _dict = remove_duplicates(_dict)
+    # jsonの書き込み
+    write_json(json_file, _dict)
     # プレイリストに書き込み
     playlist = "/".join([folderpath, "playlist.m3u8"])
-    await write_playlist(playlist, _dict["resolution"])
-    # jsonの書き込み
-    if write_json(json_file, _dict):
-        return True
-    return False
+    await write_playlist(playlist, resolution)
 
 
-def add_encode_task(folderpath, resolution):
+async def add_encode_task(folderpath, resolution):
     # 既存のjsonを読み込み
     json_file = "/".join([folderpath, "info.json"])
-    _dict = read_json(json_file)
+    _dict = await read_json(json_file)
     if not _dict:
         return False
     if f"{resolution}p" in _dict["resolution"]:
         return True
     # 画質の追加
     _dict["encode_tasks"].append(f"{resolution}p")
-    # 重複の削除
-    _dict = remove_duplicates(_dict)
     # jsonの書き込み
     if write_json(json_file, _dict):
         return True
@@ -244,11 +259,7 @@ async def get_all_info():
         recursive=True)
     result = []
     for json_file in json_files_path:
-        temp = await async_wrap(read_json)(json_file)
-        for i in temp["encode_tasks"]:
-            if i in temp["resolution"]:
-                temp["encode_tasks"].remove(i)
-        write_json(json_file, temp)
+        temp = await read_json(json_file)
 
         directory = "/".join(json_file.split("/")[:-1])
         temp["video_directory"] = directory
@@ -268,3 +279,15 @@ async def get_encode_tasks():
         if len(info["encode_tasks"]) > 0:
             result.append(info)
     return result
+
+
+async def write_file(file_path, in_file: UploadFile = File(...)):
+    async with aiofiles.open(file_path, 'wb') as out_file:
+        while True:
+            # 書き込みサイズ(MB)
+            chunk = 32
+            content = await in_file.read(chunk * 1048576)  # async read chunk
+            if content:
+                await out_file.write(content)  # async write chunk
+            else:
+                break

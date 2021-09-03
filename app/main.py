@@ -5,15 +5,18 @@ from .internal.module.video.item import (
     delete_directory,
     delete_video,
     update_json,
-    list_video_id, list_link, get_all_info, get_encode_tasks)
+    list_video_id, list_link, get_all_info, get_encode_tasks, write_file)
 
 from .internal.module.video.encode import encode_test
 
-import aiofiles
 from fastapi import FastAPI
 from fastapi import File, UploadFile, Form
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Optional
+import logging
+
 
 app = FastAPI()
 #app.mount("/video", StaticFiles(directory="./video"), name="video")
@@ -24,6 +27,9 @@ app.add_middleware(
     allow_methods=["*"],      # 追記により追加
     allow_headers=["*"]       # 追記により追加
 )
+
+
+
 
 
 @app.on_event("startup")
@@ -63,15 +69,7 @@ async def post_endpoint(
     created_dir = await create_directory(year, cid, title, explanation)
     filename_extension = "".join(in_file.filename.split(".")[-1:])
     video_file_path = f"./{created_dir}/1.{filename_extension}"
-    async with aiofiles.open(video_file_path, 'wb') as out_file:
-        while True:
-            # 書き込みサイズ(MB)
-            chunk = 4
-            content = await in_file.read(chunk * 1048576)  # async read chunk
-            if content:
-                await out_file.write(content)  # async write chunk
-            else:
-                break
+    await write_file(video_file_path, in_file)
 
     await add_encode_queue(f"./{created_dir}", f"1.{filename_extension}")
 
@@ -99,15 +97,7 @@ async def post_endpoint_(
     created_dir = await create_directory(year, cid, title, explanation)
     filename_extension = "".join(in_file.filename.split(".")[-1:])
     video_file_path = f"./{created_dir}/1.{filename_extension}"
-    async with aiofiles.open(video_file_path, 'wb') as out_file:
-        while True:
-            # 書き込みサイズ(MB)
-            chunk = 4
-            content = await in_file.read(chunk * 1048576)  # async read chunk
-            if content:
-                await out_file.write(content)  # async write chunk
-            else:
-                break
+    await write_file(video_file_path, in_file)
 
     # await add_encode_queue("./video", "1.mp4", height=360)
     await add_encode_queue(f"./{created_dir}", f"1.{filename_extension}")
@@ -140,19 +130,10 @@ async def update_video(
     """
     動画修正用
     """
-    update_json(year, cid, vid, title, explanation)
+    await update_json(year, cid, vid, title, explanation)
     await delete_video(year, cid, vid)
     filename_extension = "".join(in_file.filename.split(".")[-1:])
-
-    async with aiofiles.open(f"video/{year}/{cid}/{vid}/1.{filename_extension}", 'wb') as out_file:
-        while True:
-            # 書き込みサイズ(MB)
-            chunk = 4
-            content = await in_file.read(chunk * 1048576)  # async read chunk
-            if content:
-                await out_file.write(content)  # async write chunk
-            else:
-                break
+    await write_file(f"video/{year}/{cid}/{vid}/1.{filename_extension}", in_file)
 
     await add_encode_queue(f"video/{year}/{cid}/{vid}", f"1.{filename_extension}")
 
@@ -168,7 +149,7 @@ async def update_info(
     """
     info修正用
     """
-    update_json(year, cid, vid, title, explanation)
+    await update_json(year, cid, vid, title, explanation)
     return {"Result": "OK"}
 
 
@@ -186,8 +167,8 @@ async def linklist(year: int, cid: str):
     return await list_link(year, cid)
 
 
-@app.get("/all")
-async def test():
+@app.get("/encodetasklist")
+async def encodetasklist() -> dict:
     return await get_encode_tasks()
 
 
