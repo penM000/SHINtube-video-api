@@ -81,6 +81,8 @@ async def nvenc_encode(folderpath: str, filename: str, width=1920, height=1080,
     # なぜが入力動画と同じ解像度でエンコードするとエラーが出る
     if input_video_size["height"] == height:
         out_height = 1 + height
+    else:
+        out_height = height
     if hw_decode:
         command = [
             "/opt/bin/ffmpeg",
