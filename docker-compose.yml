@@ -20,8 +20,10 @@ services:
         max-file: "1"
   
   apiserver:
-    image: python:3.9
-    restart: always
+    build:
+      context: .
+      dockerfile: ./docker/nvenc-api/Dockerfile
+    
     environment:
       - TZ=Asia/Tokyo
     volumes:
@@ -32,7 +34,7 @@ services:
       - /dev/dri/renderD128:/dev/dri/renderD128
       - /dev/dri/card0:/dev/dri/card0
       
-    command: /bin/sh -c  "cd videoapi &&./start.sh"
+    command: /bin/sh -c  "cd videoapi &&./start.sh "
     logging:
      driver: "json-file"
      options:
