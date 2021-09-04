@@ -104,7 +104,7 @@ async def nvenc_encode(folderpath: str, filename: str, width=1920, height=1080,
             "-hls_time 6",
             "-hls_list_size 0",
             "-f hls",
-            f"{folderpath}/{height}p.m3u8"
+            f"{folderpath}/{height}p.m3u8",
         ]
     else:
         command = [
@@ -112,7 +112,7 @@ async def nvenc_encode(folderpath: str, filename: str, width=1920, height=1080,
             "-hide_banner",
             "-y",
             "-vsync 0",
-            "-init_hw_device cuda"
+            "-init_hw_device cuda",
             "-hwaccel_output_format cuda",
             f"-i {folderpath}/{filename}",
             "-b:a 192k",
@@ -129,7 +129,7 @@ async def nvenc_encode(folderpath: str, filename: str, width=1920, height=1080,
             "-hls_time 6",
             "-hls_list_size 0",
             "-f hls",
-            f"{folderpath}/{height}p.m3u8"
+            f"{folderpath}/{height}p.m3u8",
         ]
     result = await command_run(" ".join(command), "./")
     if result.returncode == 0:
