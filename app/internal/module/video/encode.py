@@ -36,8 +36,8 @@ async def soft_encode(folderpath: str, filename: str, width=1920, height=1080, t
     else:
         logger.error("software encoder error")
         logger.error(" ".join(command))
-        logger.error(result.stdout)
-        logger.error(result.stderr)
+        #logger.error(result.stdout)
+        #logger.error(result.stderr)
         return False
 
 
@@ -70,8 +70,8 @@ async def vaapi_encode(folderpath: str, filename: str, width=1920, height=1080) 
     else:
         logger.error("vaapi encoder error")
         logger.error(" ".join(command))
-        logger.error(result.stdout)
-        logger.error(result.stderr)
+        #logger.error(result.stdout)
+        #logger.error(result.stderr)
         return False
 
 
@@ -139,8 +139,8 @@ async def nvenc_encode(folderpath: str, filename: str, width=1920, height=1080,
     else:
         logger.error("nvenc encoder error")
         logger.error(" ".join(command))
-        logger.error(result.stdout)
-        logger.error(result.stderr)
+        #logger.error(result.stdout)
+        #logger.error(result.stderr)
         return False
 
 
