@@ -175,10 +175,14 @@ async def encode_test():
         result["vaapi"] = True
     else:
         result["vaapi"] = False
-    if await nvenc_encode(folderpath, filename):
+
+    if await nvenc_encode(folderpath, filename) and \
+            await nvenc_encode(folderpath, filename, hw_decode=False):
         result["nvenc"] = True
+        result["vaapi"] = False
     else:
         result["nvenc"] = False
+
     if result["vaapi"] or result["nvenc"]:
         result["soft"] = False
     else:
