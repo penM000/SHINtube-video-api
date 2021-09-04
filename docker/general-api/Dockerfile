@@ -1,0 +1,11 @@
+FROM python:3.9
+ENV TZ=Asia/Tokyo 
+
+RUN apt-get update &&\
+    apt install -y curl python3-pip ffmpeg &&\
+    apt-get clean  &&\
+    rm -r /var/lib/apt/lists/*
+
+RUN pip3 install -U fastapi uvicorn[standard] aiohttp aiofiles python-multipart aiopath
+WORKDIR /
+CMD /bin/bash

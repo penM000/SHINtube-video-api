@@ -22,7 +22,7 @@ services:
   apiserver:
     build:
       context: .
-      dockerfile: ./docker/general-api/Dockerfile
+      dockerfile: ./docker/nvenc-api/Dockerfile
     
     environment:
       - TZ=Asia/Tokyo
@@ -40,3 +40,8 @@ services:
      options:
        max-size: "1m"
        max-file: "1"
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - capabilities: [gpu]
