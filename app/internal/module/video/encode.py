@@ -80,7 +80,7 @@ async def nvenc_encode(folderpath: str, filename: str, width=1920, height=1080,
     input_video_size = await get_video_resolution(folderpath, filename)
     # なぜが入力動画と同じ解像度でエンコードするとエラーが出る
     if input_video_size["height"] == height:
-        height += 1
+        out_height = 1 + height
     if hw_decode:
         command = [
             "/opt/bin/ffmpeg",
@@ -98,7 +98,7 @@ async def nvenc_encode(folderpath: str, filename: str, width=1920, height=1080,
             "-bf 3",
             "-b_ref_mode 2",
             "-temporal-aq 1",
-            f"-vf scale_cuda=-2:{height}",
+            f"-vf scale_cuda=-2:{out_height}",
             f"-b:v {bitrate_dict[height]}M",
             f"-bufsize {bitrate_dict[height]*2}M",
             "-hls_time 6",
@@ -123,7 +123,7 @@ async def nvenc_encode(folderpath: str, filename: str, width=1920, height=1080,
             "-bf 3",
             "-b_ref_mode 2",
             "-temporal-aq 1",
-            f"-vf hwupload,scale_cuda=-2:{height}",
+            f"-vf hwupload,scale_cuda=-2:{out_height}",
             f"-b:v {bitrate_dict[height]}M",
             f"-bufsize {bitrate_dict[height]*2}M",
             "-hls_time 6",
