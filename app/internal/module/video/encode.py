@@ -1,5 +1,6 @@
 from ..command_run import command_run
-
+import logging
+logger = logging.getLogger('uvicorn')
 
 bitrate_dict = {
     1080: 12,
@@ -12,7 +13,6 @@ bitrate_dict = {
 
 
 async def soft_encode(folderpath: str, filename: str, width=1920, height=1080, thread=1) -> bool:
-
     command = [
         "ffmpeg",
         "-y",
@@ -34,12 +34,17 @@ async def soft_encode(folderpath: str, filename: str, width=1920, height=1080, t
     if result.returncode == 0:
         return True
     else:
+        logger.error("software encoder error")
+        logger.error(" ".join(command))
+        logger.error(result.stdout)
+        logger.error(result.stderr)
         return False
 
 
 async def vaapi_encode(folderpath: str, filename: str, width=1920, height=1080) -> bool:
     command = [
         "ffmpeg",
+        "-hide_banner",
         "-y",
         "-init_hw_device vaapi=intel:/dev/dri/renderD128",
         "-hwaccel vaapi",
@@ -63,8 +68,10 @@ async def vaapi_encode(folderpath: str, filename: str, width=1920, height=1080) 
     if result.returncode == 0:
         return True
     else:
-        print(result.stdout)
-        print(result.stderr)
+        logger.error("vaapi encoder error")
+        logger.error(" ".join(command))
+        logger.error(result.stdout)
+        logger.error(result.stderr)
         return False
 
 
@@ -73,6 +80,8 @@ async def nvenc_encode(folderpath: str, filename: str, width=1920, height=1080,
     if hw_decode:
         command = [
             "/opt/bin/ffmpeg",
+            "-hide_banner",
+            "-y",
             "-vsync 0",
             "-hwaccel cuda",
             "-hwaccel_output_format cuda",
@@ -96,6 +105,8 @@ async def nvenc_encode(folderpath: str, filename: str, width=1920, height=1080,
     else:
         command = [
             "/opt/bin/ffmpeg",
+            "-hide_banner",
+            "-y",
             "-vsync 0",
             "-init_hw_device cuda"
             "-hwaccel_output_format cuda",
@@ -120,6 +131,10 @@ async def nvenc_encode(folderpath: str, filename: str, width=1920, height=1080,
     if result.returncode == 0:
         return True
     else:
+        logger.error("nvenc encoder error")
+        logger.error(" ".join(command))
+        logger.error(result.stdout)
+        logger.error(result.stderr)
         return False
 
 
