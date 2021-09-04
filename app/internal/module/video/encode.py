@@ -2,12 +2,12 @@ from ..command_run import command_run
 
 
 bitrate_dict = {
-    1080: "8M",
-    720: "5M",
-    480: "2.5M",
-    360: "1M",
-    240: "500k",
-    160: "500k"
+    1080: 12,
+    720: 7.5,
+    480: 4,
+    360: 1.5,
+    240: 1,
+    160: 1
 }
 
 
@@ -52,7 +52,7 @@ async def vaapi_encode(folderpath: str, filename: str, width=1920, height=1080) 
         "-profile high",
         "-compression_level 0",
         "-start_number 0",
-        f"-b:v {bitrate_dict[height]}",
+        f"-b:v {bitrate_dict[height]}M",
         "-rc_mode VBR",
         "-hls_time 6",
         "-hls_list_size 0",
@@ -68,29 +68,54 @@ async def vaapi_encode(folderpath: str, filename: str, width=1920, height=1080) 
         return False
 
 
-async def nvenc_encode(folderpath: str, filename: str, width=1920, height=1080) -> bool:
-    await command_run("chmod +x ffmpeg", "./bin/")
-    command = [
-        "./bin/ffmpeg",
-        "-y",
-        "-init_hw_device vaapi=intel:/dev/dri/renderD128",
-        "-hwaccel vaapi",
-        "-hwaccel_output_format vaapi",
-        "-hwaccel_device intel",
-        "-filter_hw_device intel",
-        f"-i {folderpath}/{filename}",
-        "-vcodec h264_vaapi",
-        f"-vf 'format=nv12|vaapi,hwupload,fps=30,scale_vaapi=w=-2:h={height}'",
-        "-profile high",
-        "-compression_level 0",
-        "-start_number 0",
-        f"-b:v {bitrate_dict[height]}",
-        "-rc_mode VBR",
-        "-hls_time 6",
-        "-hls_list_size 0",
-        "-f hls",
-        f"{folderpath}/{height}p.m3u8"
-    ]
+async def nvenc_encode(folderpath: str, filename: str, width=1920, height=1080,
+                       hw_decode=True) -> bool:
+    if hw_decode:
+        command = [
+            "/opt/bin/ffmpeg",
+            "-vsync 0",
+            "-hwaccel cuda",
+            "-hwaccel_output_format cuda",
+            f"-i {folderpath}/{filename}",
+            "-b:a 192k",
+            "-aac_coder twoloop",
+            "-c:v h264_nvenc",
+            "-preset medium",
+            "-profile:v high",
+            "-bf 3",
+            "-b_ref_mode 2",
+            "-temporal-aq 1",
+            f"-vf scale_cuda=-2:{height}",
+            f"-b:v {bitrate_dict[height]}M",
+            f"-bufsize {bitrate_dict[height]*2}M",
+            "-hls_time 6",
+            "-hls_list_size 0",
+            "-f hls",
+            f"{folderpath}/{height}p.m3u8"
+        ]
+    else:
+        command = [
+            "/opt/bin/ffmpeg",
+            "-vsync 0",
+            "-init_hw_device cuda"
+            "-hwaccel_output_format cuda",
+            f"-i {folderpath}/{filename}",
+            "-b:a 192k",
+            "-aac_coder twoloop",
+            "-c:v h264_nvenc",
+            "-preset medium",
+            "-profile:v high",
+            "-bf 3",
+            "-b_ref_mode 2",
+            "-temporal-aq 1",
+            f"-vf hwupload,scale_cuda=-2:{height}",
+            f"-b:v {bitrate_dict[height]}M",
+            f"-bufsize {bitrate_dict[height]*2}M",
+            "-hls_time 6",
+            "-hls_list_size 0",
+            "-f hls",
+            f"{folderpath}/{height}p.m3u8"
+        ]
     result = await command_run(" ".join(command), "./")
     if result.returncode == 0:
         return True

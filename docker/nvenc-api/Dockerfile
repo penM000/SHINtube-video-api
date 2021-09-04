@@ -30,13 +30,7 @@ RUN git clone https://git.ffmpeg.org/ffmpeg.git ffmpeg/ &&\
         --enable-libnpp \
         --extra-cflags=-I/usr/local/cuda/include \
         --extra-ldflags=-L/usr/local/cuda/lib64 \
-        --nvccflags="-arch=sm_75" \
-        --nvccflags="-gencode arch=compute_52,code=sm_52 -O2" \
-        --nvccflags="-gencode arch=compute_75,code=sm_75 -O2" \
-        --nvccflags="-gencode arch=compute_80,code=sm_80 -O2" \
-        --nvccflags="-gencode arch=compute_86,code=sm_86 -O2" \
-        --nvccflags="-gencode arch=compute_86,code=compute_86 -O2" \
-        --nvccflags="-gencode arch=compute_87,code=sm_87 -O2" &&\
+        --nvccflags="-gencode arch=compute_75,code=sm_75 -O2" &&\
     make -j$(nproc) && \
     make install && \
     cd /WORKDIR && \
