@@ -77,6 +77,10 @@ async def vaapi_encode(folderpath: str, filename: str, width=1920, height=1080) 
 
 async def nvenc_encode(folderpath: str, filename: str, width=1920, height=1080,
                        hw_decode=True) -> bool:
+    input_video_size = await get_video_resolution(folderpath, filename)
+    # なぜが入力動画と同じ解像度でエンコードするとエラーが出る
+    if input_video_size["height"] == height:
+        height += 1
     if hw_decode:
         command = [
             "/opt/bin/ffmpeg",
