@@ -86,19 +86,19 @@ async def write_playlist(playlist_file: str, resolution: str = "init"):
     m3u8 = {
         "init": ["#EXTM3U", "#EXT-X-VERSION:3"],
         240: [
-            "#EXT-X-STREAM-INF:BANDWIDTH=500000,RESOLUTION=426x240",
+            "#EXT-X-STREAM-INF:BANDWIDTH=1000000,RESOLUTION=426x240",
             "240p.m3u8"],
         360: [
-            "#EXT-X-STREAM-INF:BANDWIDTH=1000000,RESOLUTION=640x360",
+            "#EXT-X-STREAM-INF:BANDWIDTH=1500000,RESOLUTION=640x360",
             "360p.m3u8"],
         480: [
-            "#EXT-X-STREAM-INF:BANDWIDTH=2500000,RESOLUTION=854x480",
+            "#EXT-X-STREAM-INF:BANDWIDTH=4000000,RESOLUTION=854x480",
             "480p.m3u8"],
         720: [
-            "#EXT-X-STREAM-INF:BANDWIDTH=5000000,RESOLUTION=1280x720",
+            "#EXT-X-STREAM-INF:BANDWIDTH=7500000,RESOLUTION=1280x720",
             "720p.m3u8"],
         1080: [
-            "#EXT-X-STREAM-INF:BANDWIDTH=8000000,RESOLUTION=1920x1080",
+            "#EXT-X-STREAM-INF:BANDWIDTH=12000000,RESOLUTION=1920x1080",
             "1080p.m3u8"],
     }
     write_data = []
