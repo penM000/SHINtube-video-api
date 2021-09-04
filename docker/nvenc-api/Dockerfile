@@ -4,7 +4,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y tzdata
 ENV TZ=Asia/Tokyo 
 RUN apt-get update &&\
-    apt-get -y install build-essential yasm cmake libtool libc6 libc6-dev unzip wget libnuma1 libnuma-dev git &&\
+    apt-get -y install build-essential yasm cmake libtool libc6 libc6-dev unzip wget libnuma1 libnuma-dev git pkg-config &&\
     apt-get clean  &&\
     rm -r /var/lib/apt/lists/*
 WORKDIR /WORKDIR
