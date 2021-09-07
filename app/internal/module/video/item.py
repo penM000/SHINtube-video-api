@@ -1,3 +1,6 @@
+from concurrent.futures import ThreadPoolExecutor
+import pathlib
+import logging
 import os
 import random
 import string
@@ -6,7 +9,7 @@ import shutil
 import glob
 import aiofiles
 import datetime
-
+import concurrent.futures
 import asyncio
 from functools import wraps, partial
 
@@ -22,6 +25,17 @@ def async_wrap(func):
         if loop is None:
             loop = asyncio.get_event_loop()
         pfunc = partial(func, *args, **kwargs)
+        return await loop.run_in_executor(executor, pfunc)
+    return run
+
+
+def async_wrap_thread(func):
+    @wraps(func)
+    async def run(*args, loop=None, executor=None, **kwargs):
+        if loop is None:
+            loop = asyncio.get_event_loop()
+        pfunc = partial(func, *args, **kwargs)
+        executor = ThreadPoolExecutor(max_workers=3)
         return await loop.run_in_executor(executor, pfunc)
     return run
 
@@ -282,6 +296,7 @@ async def get_encode_tasks():
 
 
 async def write_file(file_path, in_file: UploadFile = File(...)):
+    in_file.file.seek(0)
     async with aiofiles.open(file_path, 'wb') as out_file:
         while True:
             # 書き込みサイズ(MB)
@@ -291,3 +306,43 @@ async def write_file(file_path, in_file: UploadFile = File(...)):
                 await out_file.write(content)  # async write chunk
             else:
                 break
+
+
+def write_file2(file_path, in_file: UploadFile = File(...)):
+    in_file.file.seek(0)
+    destination = pathlib.Path(file_path)
+    with destination.open("wb") as buffer:
+        shutil.copyfileobj(in_file.file, buffer)
+
+
+async def write_file3(file_path, in_file: UploadFile = File(...)):
+    in_file.file.seek(0)
+    with open(file_path, "wb") as out_file:
+        while True:
+            # 書き込みサイズ(MB)
+            chunk = 32
+            content = await in_file.read(chunk * 1048576)  # async read chunk
+            if content:
+                await async_wrap_thread(out_file.write)(content)
+            else:
+                break
+
+
+async def file_write_test(file_path, in_file: UploadFile = File(...)):
+    in_file.file.seek(0, 2)  # seek to the end
+    file_size = in_file.file.tell() / (10**6)
+    in_file.file.seek(0)  # seek to the start
+    logger = logging.getLogger('uvicorn')
+    import time
+    start = time.time()
+    # await write_file(file_path, in_file)
+    #logger.info(f"{ file_size/(time.time() - start)}MB/s")
+
+    start = time.time()
+    await write_file3(file_path, in_file)
+    logger.info(f"{ file_size/(time.time() - start)}MB/s")
+
+
+def temporary_thumbnail(_video_dir):
+    shutil.copy("./video/thumbnail/1.png", f"./{_video_dir}/thumbnail_360.jpg")
+    
