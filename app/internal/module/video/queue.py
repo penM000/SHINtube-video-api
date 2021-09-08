@@ -60,7 +60,7 @@ async def add_encode_queue(folderpath, filename, encode_resolution="Auto"):
         await result_encode(folderpath, 1080, False)
         return
     if encode_resolution == "Auto":
-        video_size = [240, 360, 480, 720, 1080]
+        video_size = [360, 480, 720, 1080]
         for height in video_size:
             if input_video_resolution.height >= height:
                 encode_config = {
