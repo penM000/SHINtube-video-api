@@ -3,6 +3,7 @@ from ..command_run import command_run
 import logging
 import json
 import asyncio
+import os
 from typing import List
 logger = logging.getLogger('uvicorn')
 
@@ -14,9 +15,9 @@ class encoder_class:
         self.sample_video = "video.mp4"
         # 解像度:ビットレート(Mbps)
         self.bitrate = {
-            1080: 12,
-            720: 7.5,
-            480: 4,
+            1080: 3,
+            720: 2.5,
+            480: 2,
             360: 1.5,
             240: 1,
             160: 1
@@ -38,16 +39,42 @@ class encoder_class:
             "software": False
         }
 
+    def get_bitrate(quality: str = "high"):
+        pass
+        return
+
+    def audio_encode_command(
+            self,
+            folderpath: str,
+            filename: str,):
+        """
+        オーディオ切り出しのコマンド
+        """
+        command = [
+            "ffmpeg",
+            "-hide_banner",
+            "-y",
+            f"-i {folderpath}/{filename}",
+            "-vn",
+            "-b:a 192k",
+            "-aac_coder twoloop",
+            "-start_number 0",
+            "-hls_time 6",
+            "-hls_list_size 0",
+            "-f hls",
+            f"{folderpath}/audio.m3u8"
+        ]
+        return command
+
     def software_encode_command(
             self,
             folderpath: str,
             filename: str,
             resolution: int,
-            thread: int = int(
-            multiprocessing.cpu_count())) -> List[str]:
+            thread: int = 0) -> List[str]:
         """
         ソフトウエアエンコード時のコマンド。
-        ビットレートの指定はなく、crfによる品質保持のエンコードを行う。
+        遅い。
         """
         command = [
             "ffmpeg",
@@ -56,11 +83,14 @@ class encoder_class:
             "-vsync 1",
             f"-threads {thread}",
             f"-i {folderpath}/{filename}",
+            "-r 30",
+            "-g 180",
             f"-threads {thread}",
             "-vcodec libx264",
-            "-crf 20",
-            "-b:a 192k",
-            "-aac_coder twoloop",
+            "-bf 8",
+            f"-b:v {self.bitrate[resolution]}M",
+            f"-bufsize {self.bitrate[resolution]*6}M",
+            "-an",
             "-start_number 0",
             "-hls_time 6",
             "-hls_list_size 0",
@@ -91,12 +121,14 @@ class encoder_class:
             "-hwaccel_device intel",
             "-filter_hw_device intel",
             f"-i {folderpath}/{filename}",
+            "-r 30",
+            "-g 180",
             "-vcodec h264_vaapi",
             "-rc_mode VBR",
+            "-bf 8",
             f"-b:v {self.bitrate[resolution]}M",
-            f"-bufsize {self.bitrate[resolution]*2}M",
-            "-b:a 192k",
-            "-aac_coder twoloop",
+            f"-bufsize {self.bitrate[resolution]*6}M",
+            "-an",
             f"-vf 'format=nv12|vaapi,hwupload,scale_vaapi=w=-2:h={resolution}'",
             "-profile high",
             "-compression_level 0",
@@ -121,18 +153,19 @@ class encoder_class:
             "/opt/bin/ffmpeg",
             "-hide_banner",
             "-y",
-            "-vsync 0",
+            "-vsync 1",
             "-hwaccel cuda",
             "-hwaccel_output_format cuda",
             f"-i {folderpath}/{filename}",
+            "-r 30",
+            "-g 180",
             "-c:v h264_nvenc",
             f"-b:v {self.bitrate[resolution]}M",
-            f"-bufsize {self.bitrate[resolution]*2}M",
-            "-b:a 192k",
-            "-aac_coder twoloop",
+            f"-bufsize {self.bitrate[resolution]*6}M",
+            "-an",
             "-preset medium",
             "-profile:v high",
-            "-bf 3",
+            "-bf 4",
             "-b_ref_mode 2",
             "-temporal-aq 1",
             f"-vf scale_cuda=-2:{resolution-1}",
@@ -161,14 +194,15 @@ class encoder_class:
             "-init_hw_device cuda",
             "-hwaccel_output_format cuda",
             f"-i {folderpath}/{filename}",
+            "-r 30",
+            "-g 180",
             "-c:v h264_nvenc",
             f"-b:v {self.bitrate[resolution]}M",
-            f"-bufsize {self.bitrate[resolution]*2}M",
-            "-b:a 192k",
-            "-aac_coder twoloop",
+            f"-bufsize {self.bitrate[resolution]*6}M",
+            "-an",
             "-preset medium",
             "-profile:v high",
-            "-bf 3",
+            "-bf 4",
             "-b_ref_mode 2",
             "-temporal-aq 1",
             f"-vf hwupload,scale_cuda=-2:{resolution-1}",
@@ -296,12 +330,31 @@ class encoder_class:
         result = self.encode_command_class(use_encoder, command)
         return result
 
+    async def encode_audio(
+            self,
+            folderpath: str,
+            filename: str,
+            force: bool = False):
+        # audio.m3u8がファイルが存在していた場合
+        audio_path = f"{folderpath}/audio.m3u8"
+        if os.path.isfile(audio_path) or force:
+            return True
+        # 空のaudio.m3u8を作成
+        with open(audio_path, "w"):
+            pass
+
+        # audioのエンコード
+        command = self.audio_encode_command(folderpath, filename)
+        await command_run(" ".join(command), "./")
+        return True
+
     async def encode(
             self,
             folderpath: str,
             filename: str,
             resolution: int,):
         logger.info("エンコード開始!!")
+        await self.encode_audio(folderpath, filename)
         encoder = await self.get_encode_command(folderpath, filename, resolution)
         logger.info("エンコーダ選択完了!!")
         # エンコード実行
