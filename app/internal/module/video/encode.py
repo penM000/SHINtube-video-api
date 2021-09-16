@@ -154,6 +154,7 @@ class encoder_class:
             "-hide_banner",
             "-y",
             "-vsync 1",
+            "-init_hw_device cuda",
             "-hwaccel cuda",
             "-hwaccel_output_format cuda",
             f"-i {folderpath}/{filename}",

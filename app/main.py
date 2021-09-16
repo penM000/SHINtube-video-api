@@ -38,7 +38,7 @@ logger = logging.getLogger('api')
 
 
 async def backend_file_save_add_encode(dir_path, in_file):
-    await asyncio.sleep(10)
+    #await asyncio.sleep(10)
     filename_extension = "".join(in_file.filename.split(".")[-1:])
     video_file_path = f"./{dir_path}/1.{filename_extension}"
     await write_file(video_file_path, in_file)
@@ -236,9 +236,9 @@ async def test4():
 
 @app.get("/log")
 async def log():
-    return await encoder.get_video_resolution("./sampl", "video.mp4")
+    return await encoder.get_video_resolution("./sample", "video.mp4")
 
 
 @app.get("/log2")
 async def log2():
-    return await encoder.get_video_info("./", "start.sh")
+    return await encoder.get_video_info("./sample", "video.mp4")
