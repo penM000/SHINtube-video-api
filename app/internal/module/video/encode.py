@@ -5,6 +5,7 @@ import json
 import asyncio
 import os
 from typing import List
+from dataclasses import dataclass
 logger = logging.getLogger('uvicorn')
 
 
@@ -254,31 +255,33 @@ class encoder_class:
         ]
         return command
 
+    @dataclass
+    class video_info_class:
+        """Class for keeping track of an item in inventory."""
+        is_video: bool = False
+        is_audio: bool = False
+        width: int = 0
+        height: int = 0
+
     async def get_video_info(
-            self, folderpath: str, filename: str) -> dict:
+            self, folderpath: str, filename: str) -> video_info_class:
         command = self.video_info_command(folderpath, filename)
         result = await command_run(" ".join(command), "./")
         try:
             result = json.loads(result.stdout)
         except ValueError:
             result = {}
-        return result
-
-    class video_resolution_class:
-        def __init__(self, width: int, height: int, is_video: bool = True):
-            self.is_video: bool = is_video
-            self.width: int = width
-            self.height: int = height
-
-    async def get_video_resolution(
-            self, folderpath: str, filename: str) -> video_resolution_class:
-        result = await self.get_video_info(folderpath, filename)
-        try:
-            width = result["streams"][0]["width"]
-            height = result["streams"][0]["height"]
-            obj = self.video_resolution_class(width, height)
-        except KeyError:
-            obj = self.video_resolution_class(0, 0, False)
+        obj = self.video_info_class()
+        if "streams" not in result:
+            return obj
+        for stream in result["streams"]:
+            if "codec_type" in stream:
+                if "audio" == stream["codec_type"]:
+                    obj.is_audio = True
+                elif "video" == stream["codec_type"]:
+                    obj.is_video = True
+                    obj.width = stream["width"]
+                    obj.height = stream["height"]
         return obj
 
     class encode_command_class:
