@@ -8,7 +8,7 @@ from .item import (
     result_encode,
     add_encode_task,
     add_encode_error,
-    write_playlist)
+    )
 
 
 @dataclass(order=True)
@@ -63,10 +63,6 @@ async def add_encode_queue(folderpath, filename, encode_resolution="Auto"):
         return
     else:
         await encoder.thumbnail(folderpath, filename)
-    # オーディオがあれば作成
-    if input_video_info.is_audio:
-        await encoder.encode_audio(folderpath, filename)
-        await write_playlist(folderpath + "/playlist.m3u8", "audio")
     # 解像度ごとにエンコードキューを追加
     if encode_resolution == "Auto":
         video_size = [360, 480, 720, 1080]

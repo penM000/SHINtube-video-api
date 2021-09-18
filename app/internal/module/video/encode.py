@@ -1,3 +1,4 @@
+from .item import write_playlist
 import multiprocessing
 from ..command_run import command_run
 import logging
@@ -350,6 +351,7 @@ class encoder_class:
         # audioのエンコード
         command = self.audio_encode_command(folderpath, filename)
         await command_run(" ".join(command), "./")
+        await write_playlist(audio_path, "audio")
         return True
 
     async def encode(
@@ -358,7 +360,9 @@ class encoder_class:
             filename: str,
             resolution: int,):
         logger.info("エンコード開始!!")
-        await self.encode_audio(folderpath, filename)
+        input_video_info = await self.get_video_info(folderpath, filename)
+        if input_video_info.is_audio:
+            await self.encode_audio(folderpath, filename)
         encoder = await self.get_encode_command(folderpath, filename, resolution)
         logger.info("エンコーダ選択完了!!")
         # エンコード実行
