@@ -126,6 +126,9 @@ async def write_playlist(playlist_file: str, resolution: str = "init"):
     if resolution == "init":
         write_data.extend(m3u8["init"])
         write_mode = "w"
+    elif resolution == "audio":
+        write_data.extend(m3u8["audio"])
+        write_mode = "a"
     else:
         write_mode = "a"
         try:
