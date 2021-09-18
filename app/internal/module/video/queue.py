@@ -4,7 +4,11 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .encode import encoder
-from .item import result_encode, add_encode_task
+from .item import (
+    result_encode,
+    add_encode_task,
+    add_encode_error,
+    write_playlist)
 
 
 @dataclass(order=True)
@@ -52,17 +56,24 @@ async def add_encode_queue(folderpath, filename, encode_resolution="Auto"):
             encode_tasks.append(task)
 
     # 動画の形式確認
-    input_video_resolution = await encoder.get_video_resolution(folderpath, filename)
-    if input_video_resolution.is_video:
-        pass
-    else:
-        await add_encode_task(folderpath, 1080)
-        await result_encode(folderpath, 1080, False)
+    input_video_info = await encoder.get_video_info(folderpath, filename)
+    # 映像がなければエラー
+    if not input_video_info.is_video:
+        await add_encode_error(folderpath, "not video file")
         return
+    else:
+        await encoder.thumbnail(folderpath, filename)
+    # オーディオがあれば作成
+    if input_video_info.is_audio:
+        await encoder.encode_audio(folderpath, filename)
+        await write_playlist(folderpath + "/playlist.m3u8", "audio")
+    # 解像度ごとにエンコードキューを追加
     if encode_resolution == "Auto":
         video_size = [360, 480, 720, 1080]
         for height in video_size:
-            if input_video_resolution.height >= height:
+            # 入力解像度が超えていれば追加
+            if input_video_info.height >= height:
+                await add_encode_task(folderpath, height)
                 encode_config = {
                     "folderpath": folderpath,
                     "filename": filename,
@@ -70,9 +81,11 @@ async def add_encode_queue(folderpath, filename, encode_resolution="Auto"):
                 }
                 queue_item = QueueItem(priority=height, item=encode_config)
                 queue.put_nowait(queue_item)
-                await add_encode_task(folderpath, height)
+
     else:
+        # エンコードの再追加用
         height = int(encode_resolution)
+        await add_encode_task(folderpath, height)
         encode_config = {
             "folderpath": folderpath,
             "filename": filename,
@@ -80,5 +93,3 @@ async def add_encode_queue(folderpath, filename, encode_resolution="Auto"):
         }
         queue_item = QueueItem(priority=height, item=encode_config)
         queue.put_nowait(queue_item)
-        await add_encode_task(folderpath, height)
-    await encoder.thumbnail(folderpath, filename)

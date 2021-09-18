@@ -101,6 +101,8 @@ async def write_playlist(playlist_file: str, resolution: str = "init"):
         "init": [
             "#EXTM3U",
             "#EXT-X-VERSION:3",
+        ],
+        "audio": [
             "#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID=\"audio\",NAME=\"Audio\",LANGUAGE=\"ja\",AUTOSELECT=YES,URI=\"audio.m3u8\""],
         240: [
             "#EXT-X-STREAM-INF:BANDWIDTH=250000,RESOLUTION=426x240,AUDIO=\"audio\"",
@@ -264,6 +266,20 @@ async def add_encode_task(folderpath, resolution):
         return True
     # 画質の追加
     _dict["encode_tasks"].append(f"{resolution}p")
+    # jsonの書き込み
+    if write_json(json_file, _dict):
+        return True
+    return False
+
+
+async def add_encode_error(folderpath, message):
+    # 既存のjsonを読み込み
+    json_file = "/".join([folderpath, "info.json"])
+    _dict = await read_json(json_file)
+    if not _dict:
+        return False
+    # 画質の追加
+    _dict["encode_error"].append(f"{message}")
     # jsonの書き込み
     if write_json(json_file, _dict):
         return True
