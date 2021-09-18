@@ -10,7 +10,7 @@ services:
       - apiserver=apiserver
       - TZ=Asia/Tokyo
     volumes:
-      - ./video:/var/www/html/video
+      - videodata:/var/www/html/video
       - ./nginx/nginx.conf:/etc/nginx/conf.d/mysite.template
     command: /bin/bash -c  "envsubst '$$apiserver' < /etc/nginx/conf.d/mysite.template > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"
     logging:
@@ -27,6 +27,7 @@ services:
     environment:
       - TZ=Asia/Tokyo
     volumes:
+      - videodata:/videoapi/video
       - ./:/videoapi
 
     devices:
@@ -45,3 +46,11 @@ services:
         reservations:
           devices:
           - capabilities: [utility, compute, video]
+
+volumes:
+  videodata:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: './video'
