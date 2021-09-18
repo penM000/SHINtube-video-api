@@ -11,7 +11,7 @@ from .internal.module.video.item import (
     get_all_info,
     get_encode_tasks,
     write_file,
-    file_write_test)
+    file_write_test, audio_recovery)
 
 from .internal.module.video.encode import encoder
 
@@ -47,7 +47,7 @@ async def backend_file_save_add_encode(dir_path, in_file):
 
 @app.on_event("startup")
 async def startup_event():
-    # await encoder.encode_test()
+    audio_recovery()
     tasks = await get_encode_tasks()
     for task in tasks:
         for encode_resolution in task["encode_tasks"]:

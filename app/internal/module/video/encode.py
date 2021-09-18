@@ -352,6 +352,11 @@ class encoder_class:
         command = self.audio_encode_command(folderpath, filename)
         await command_run(" ".join(command), "./")
         await write_playlist(audio_path, "audio")
+        audio_done_path = f"{folderpath}/audio.done"
+        # 空のaudio.doneを作成
+        with open(audio_done_path, "w"):
+            pass
+
         return True
 
     async def encode(
