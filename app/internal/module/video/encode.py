@@ -15,12 +15,12 @@ class encoder_class:
         self.sample_video = "video.mp4"
         # 解像度:ビットレート(Mbps)
         self.bitrate = {
-            1080: 3,
-            720: 2.5,
-            480: 2,
-            360: 1.5,
-            240: 1,
-            160: 1
+            1080: 4.3,
+            720: 2.3,
+            480: 1.2,
+            360: 0.65,
+            240: 0.24,
+            160: 0.24
         }
         # 利用可能なエンコーダ
         self.encoder_available = {

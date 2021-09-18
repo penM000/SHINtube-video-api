@@ -103,19 +103,19 @@ async def write_playlist(playlist_file: str, resolution: str = "init"):
             "#EXT-X-VERSION:3",
             "#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID=\"audio\",NAME=\"Audio\",LANGUAGE=\"ja\",AUTOSELECT=YES,URI=\"audio.m3u8\""],
         240: [
-            "#EXT-X-STREAM-INF:BANDWIDTH=1000000,RESOLUTION=426x240,AUDIO=\"audio\"",
+            "#EXT-X-STREAM-INF:BANDWIDTH=250000,RESOLUTION=426x240,AUDIO=\"audio\"",
             "240p.m3u8"],
         360: [
-            "#EXT-X-STREAM-INF:BANDWIDTH=1500000,RESOLUTION=640x360,AUDIO=\"audio\"",
+            "#EXT-X-STREAM-INF:BANDWIDTH=650000,RESOLUTION=640x360,AUDIO=\"audio\"",
             "360p.m3u8"],
         480: [
-            "#EXT-X-STREAM-INF:BANDWIDTH=2000000,RESOLUTION=854x480,AUDIO=\"audio\"",
+            "#EXT-X-STREAM-INF:BANDWIDTH=1200000,RESOLUTION=854x480,AUDIO=\"audio\"",
             "480p.m3u8"],
         720: [
-            "#EXT-X-STREAM-INF:BANDWIDTH=2500000,RESOLUTION=1280x720,AUDIO=\"audio\"",
+            "#EXT-X-STREAM-INF:BANDWIDTH=2300000,RESOLUTION=1280x720,AUDIO=\"audio\"",
             "720p.m3u8"],
         1080: [
-            "#EXT-X-STREAM-INF:BANDWIDTH=3000000,RESOLUTION=1920x1080,AUDIO=\"audio\"",
+            "#EXT-X-STREAM-INF:BANDWIDTH=4300000,RESOLUTION=1920x1080,AUDIO=\"audio\"",
             "1080p.m3u8"],
     }
     write_data = []
