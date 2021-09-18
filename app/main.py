@@ -38,7 +38,7 @@ logger = logging.getLogger('api')
 
 
 async def backend_file_save_add_encode(dir_path, in_file):
-    #await asyncio.sleep(10)
+    # await asyncio.sleep(10)
     filename_extension = "".join(in_file.filename.split(".")[-1:])
     video_file_path = f"./{dir_path}/1.{filename_extension}"
     await write_file(video_file_path, in_file)
@@ -82,56 +82,11 @@ async def post_endpoint(
     """
 
     created_dir = await create_directory(year, cid, title, explanation)
-    try:
-        shutil.copy("./video/thumbnail/3.png",
-                    f"./{created_dir}/thumbnail_360.jpg")
-    except BaseException:
-        pass
+
     background_tasks.add_task(
         backend_file_save_add_encode,
         created_dir,
         in_file)
-
-    """
-    filename_extension = "".join(in_file.filename.split(".")[-1:])
-    video_file_path = f"./{created_dir}/1.{filename_extension}"
-    await write_file(video_file_path, in_file)
-    await add_encode_queue(f"./{created_dir}", f"1.{filename_extension}")
-    """
-    return {"Result": "OK"}
-
-
-@app.post("/upload_form")
-async def post_endpoint_(
-        background_tasks: BackgroundTasks,
-        year: int = Form(...),
-        cid: str = Form(...),
-        title: str = Form(...),
-        explanation: str = Form(...),
-        in_file: UploadFile = File(...),):
-    """
-    動画アップロード用\n
-    \n
-    引数\n
-    in_file :  [動画ファイル]\n
-    year    :  [年度]\n
-    cid      :  [授業コード]\n
-    title     : [動画タイトル]\n
-    explanation : [動画説明]\n
-    """
-
-    created_dir = await create_directory(year, cid, title, explanation)
-    background_tasks.add_task(
-        backend_file_save_add_encode,
-        created_dir,
-        in_file)
-    """
-    filename_extension = "".join(in_file.filename.split(".")[-1:])
-    video_file_path = f"./{created_dir}/1.{filename_extension}"
-    await write_file(video_file_path, in_file)
-    await add_encode_queue(f"./{created_dir}", f"1.{filename_extension}")
-    """
-
     return {"Result": "OK"}
 
 
@@ -168,11 +123,6 @@ async def update_video(
         backend_file_save_add_encode,
         f"video/{year}/{cid}/{vid}",
         in_file)
-    """
-    filename_extension = "".join(in_file.filename.split(".")[-1:])
-    await write_file(f"video/{year}/{cid}/{vid}/1.{filename_extension}", in_file)
-    await add_encode_queue(f"video/{year}/{cid}/{vid}", f"1.{filename_extension}")
-    """
 
 
 @app.post("/updateinfo")
@@ -210,35 +160,5 @@ async def encodetasklist() -> dict:
 
 
 @app.get("/encode_test")
-async def test2():
-    return await encode_test()
-
-
-@app.post("/upload_test")
-async def upload_test(background_tasks: BackgroundTasks, name: str, in_file: UploadFile = File(...)):
-    background_tasks.add_task(
-        file_write_test,
-        "./video/speedtest" + name,
-        in_file)
-
-    return
-
-
-@app.get("/test")
-async def test3():
+async def encode_test():
     return await encoder.encode_test()
-
-
-@app.get("/test2")
-async def test4():
-    return await encoder.encode("./sample", "video.mp4", 360)
-
-
-@app.get("/log")
-async def log():
-    return await encoder.get_video_resolution("./sample", "video.mp4")
-
-
-@app.get("/log2")
-async def log2():
-    return await encoder.get_video_info("./sample", "video.mp4")
