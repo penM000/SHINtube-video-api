@@ -311,7 +311,7 @@ async def get_all_info():
 def audio_recovery():
     video_path = pathlib.Path("./")
     audio_files_path = video_path.glob(
-        f"./{video_dir}/**/audio.m3u8", recursive=True)
+        f"./{video_dir}/**/audio.m3u8")
     for i in audio_files_path:
         done_file_path = i.parent / "audio.done"
         if not done_file_path.exists():
