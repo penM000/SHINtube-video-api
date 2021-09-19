@@ -5,5 +5,5 @@ bin/*
 video/*
 !.gitkeep
 docker-compose.yml
-
+*.log
 
