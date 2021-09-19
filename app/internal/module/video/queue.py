@@ -4,11 +4,8 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .encode import encoder
-from .item import (
-    result_encode,
-    add_encode_task,
-    add_encode_error,
-    )
+from .database import database
+from ..logger import logger
 
 
 @dataclass(order=True)
@@ -36,10 +33,9 @@ async def encode_worker(queue: QueueItem):
             filename=encode_config["filename"],
             resolution=encode_config["height"])
 
-        await result_encode(
-            encode_config["folderpath"],
-            encode_config["height"],
-            result)
+        await database.encode_result(encode_config["folderpath"],
+                                     encode_config["height"],
+                                     result)
 
         # DBにdoneの更新
         queue.task_done()
@@ -59,7 +55,8 @@ async def add_encode_queue(folderpath, filename, encode_resolution="Auto"):
     input_video_info = await encoder.get_video_info(folderpath, filename)
     # 映像がなければエラー
     if not input_video_info.is_video:
-        await add_encode_error(folderpath, "not video file")
+        logger.warning(f"{folderpath} not video file")
+        await database.encode_error(folderpath, "not video file")
         return
     else:
         await encoder.thumbnail(folderpath, filename)
@@ -69,7 +66,7 @@ async def add_encode_queue(folderpath, filename, encode_resolution="Auto"):
         for height in video_size:
             # 入力解像度が超えていれば追加
             if input_video_info.height >= height:
-                await add_encode_task(folderpath, height)
+                await database.encode_task(folderpath, height)
                 encode_config = {
                     "folderpath": folderpath,
                     "filename": filename,
@@ -81,7 +78,7 @@ async def add_encode_queue(folderpath, filename, encode_resolution="Auto"):
     else:
         # エンコードの再追加用
         height = int(encode_resolution)
-        await add_encode_task(folderpath, height)
+        await database.encode_task(folderpath, height)
         encode_config = {
             "folderpath": folderpath,
             "filename": filename,

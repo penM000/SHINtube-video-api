@@ -41,13 +41,40 @@ cp ./docker-compose-general.yml docker-compose.yml
 # nvenc vaapi ソフトウエアエンコード用
 cp ./docker-compose-nvenc.yml docker-compose.yml 
 ```
+- 動画保保存する場所
+```yml
+volumes:
+  videodata:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: './video' # 動画の保尊先として利用するパスに変更する
+```
+
 - コンテナイメージの作成(nvencの場合時間がかかります)
 ```bash
-docker-compose build
+docker-compose build --no-cache
 ```
 - 起動
 ```bash
 docker-compose up -d
+```
+
+- 起動確認
+```bash
+curl http://127.0.0.1:8000/
+# 結果
+{"message":"Hello Bigger Applications!"}
+```
+
+- エンコードテスト
+期待するエンコーダーが利用可能であることを確認
+※softwareは他が利用不可の時のみ利用可能
+```bash
+curl http://127.0.0.1:8000/encode_test
+# 結果
+{"vaapi":true,"nvenc_hw_decode":true,"nvenc_sw_decode":true,"software":false}
 ```
 
 

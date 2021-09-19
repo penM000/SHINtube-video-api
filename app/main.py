@@ -1,31 +1,17 @@
 
-import shutil
+from .internal.module.video.filemanager import filemanager
+from .internal.module.video.database import database
 from .internal.module.video.queue import add_encode_queue
-from .internal.module.video.item import (
-    create_directory,
-    delete_directory,
-    delete_video,
-    update_json,
-    list_video_id,
-    list_link,
-    get_all_info,
-    get_encode_tasks,
-    write_file,
-    file_write_test, audio_recovery)
-
+from .internal.module.video.recovery import recovery
 from .internal.module.video.encode import encoder
 
 from fastapi import FastAPI, BackgroundTasks
-from fastapi import File, UploadFile, Form
-from fastapi.staticfiles import StaticFiles
+from fastapi import File, UploadFile
 from starlette.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Optional
-import logging
 
-import asyncio
+
 app = FastAPI()
-#app.mount("/video", StaticFiles(directory="./video"), name="video")
+# app.mount("/video", StaticFiles(directory="./video"), name="video")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -34,27 +20,17 @@ app.add_middleware(
     allow_headers=["*"]       # 追記により追加
 )
 
-logger = logging.getLogger('api')
-
 
 async def backend_file_save_add_encode(dir_path, in_file):
-    # await asyncio.sleep(10)
     filename_extension = "".join(in_file.filename.split(".")[-1:])
     video_file_path = f"./{dir_path}/1.{filename_extension}"
-    await write_file(video_file_path, in_file)
+    await filemanager.write_file(video_file_path, in_file)
     await add_encode_queue(dir_path, f"1.{filename_extension}")
 
 
 @app.on_event("startup")
 async def startup_event():
-    audio_recovery()
-    tasks = await get_encode_tasks()
-    for task in tasks:
-        for encode_resolution in task["encode_tasks"]:
-            await add_encode_queue(folderpath=task["video_directory"],
-                                   filename=task["video_file_name"],
-                                   encode_resolution=int(encode_resolution[:-1]))
-    pass
+    await recovery.runrecovery()
 
 
 @app.get("/")
@@ -80,8 +56,8 @@ async def post_endpoint(
     title     : [動画タイトル]\n
     explanation : [動画説明]\n
     """
-
-    created_dir = await create_directory(year, cid, title, explanation)
+    created_dir = await filemanager.create_directory(
+        year, cid, title, explanation)
 
     background_tasks.add_task(
         backend_file_save_add_encode,
@@ -100,7 +76,7 @@ async def video_delete(year: int, cid: str, vid: str):
     cid      :  [授業コード]\n
     vid      :  [動画コード]\n
     """
-    await delete_directory(year, cid, vid)
+    await filemanager.delete_directory(year, cid, vid)
     return {"Result": "OK"}
 
 
@@ -116,8 +92,8 @@ async def update_video(
     """
     動画修正用
     """
-    await update_json(year, cid, vid, title, explanation)
-    await delete_video(year, cid, vid)
+    await database.update_info(year, cid, vid, title, explanation)
+    await database.delete_video(year, cid, vid)
 
     background_tasks.add_task(
         backend_file_save_add_encode,
@@ -136,7 +112,7 @@ async def update_info(
     """
     info修正用
     """
-    await update_json(year, cid, vid, title, explanation)
+    await database.update_info(year, cid, vid, title, explanation)
     return {"Result": "OK"}
 
 
@@ -146,17 +122,17 @@ async def video_list(year: int, cid: str):
     動画一覧取得用
     """
 
-    return await list_video_id(year, cid)
+    return await database.list_video_id(year, cid)
 
 
 @app.get("/linklist")
 async def linklist(year: int, cid: str):
-    return await list_link(year, cid)
+    return await database.list_link(year, cid)
 
 
 @app.get("/encodetasklist")
 async def encodetasklist() -> dict:
-    return await get_encode_tasks()
+    return await database.get_encode_tasks()
 
 
 @app.get("/encode_test")

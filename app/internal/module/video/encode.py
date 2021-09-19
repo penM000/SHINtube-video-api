@@ -1,13 +1,11 @@
-from .item import write_playlist
-import multiprocessing
+from .filemanager import filemanager
 from ..command_run import command_run
-import logging
+from ..logger import logger
 import json
 import asyncio
 import os
 from typing import List
 from dataclasses import dataclass
-logger = logging.getLogger('uvicorn')
 
 
 class encoder_class:
@@ -352,7 +350,7 @@ class encoder_class:
         command = self.audio_encode_command(folderpath, filename)
         await command_run(" ".join(command), "./")
         playlist_path = f"{folderpath}/playlist.m3u8"
-        await write_playlist(playlist_path, "audio")
+        await filemanager.write_playlist(playlist_path, "audio")
         audio_done_path = f"{folderpath}/audio.done"
         # 空のaudio.doneを作成
         with open(audio_done_path, "w"):
@@ -365,30 +363,32 @@ class encoder_class:
             folderpath: str,
             filename: str,
             resolution: int,):
-        logger.info("エンコード開始!!")
+        logger.info("エンコード開始")
         input_video_info = await self.get_video_info(folderpath, filename)
         if input_video_info.is_audio:
             await self.encode_audio(folderpath, filename)
         encoder = await self.get_encode_command(folderpath, filename, resolution)
-        logger.info("エンコーダ選択完了!!")
+        logger.info(f"エンコーダ{encoder.encoder}を使用")
         # エンコード実行
         result = await command_run(" ".join(encoder.command), "./")
+        logger.info("エンコード完了")
         # エンコーダーを開放
         self.encoder_used_status[encoder.encoder] = False
+
         if result.returncode == 0:
             return True
         else:
-            logger.error("encoder error")
+            logger.error(f"encoder error {folderpath}")
             logger.error(" ".join(encoder.command))
-            # logger.error(result.stdout)
-            # logger.error(result.stderr)
+            logger.error(result.stdout)
+            logger.error(result.stderr)
             return False
 
     async def encode_test(self):
         """
         エンコードのテスト
         """
-        logger.info("エンコードテスト開始!!")
+        logger.info("エンコードテスト開始")
         self.encode_worker = 0
         # vaapi のテスト
         command = self.vaapi_encode_command(
@@ -420,6 +420,7 @@ class encoder_class:
             self.encode_worker = 1
 
         logger.info("エンコードテスト完了!!")
+        logger.info(f"{self.encoder_available}")
         return self.encoder_available
 
 
