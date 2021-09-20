@@ -2,7 +2,7 @@
 Video sharing platform for Shinshu University.
 
 SHINtube-video-apiはffmpegを利用して動画のエンコード、配信を行う動画配信プラットフォームのバックエンドです。
-利用の際はバックエンドの[kuropengin/SHINtube](https://github.com/kuropengin/SHINtube)及び、LTIが利用可能なLMSが必要になります。
+利用の際はフロントエンドの[kuropengin/SHINtube](https://github.com/kuropengin/SHINtube)及び、LTIが利用可能なLMSが必要になります。
 
 
 ## 機能
