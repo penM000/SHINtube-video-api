@@ -1,6 +1,7 @@
 import pathlib
 from .database import database
 from .queue import add_encode_queue
+from ..logger import logger
 video_dir = "video"
 
 
@@ -13,14 +14,16 @@ class recovery_class():
             if not done_file_path.exists():
                 i.unlink()
 
-    def file_recovery(self):
+    async def file_recovery(self):
         folder_paths = pathlib.Path("./").glob("**/info.json")
         for folder_path in folder_paths:
-            done_file_path - folder_path.parent / "file.done"
+            done_file_path = folder_path.parent / "file.done"
             if not done_file_path.exists():
-                database.encode_error(str(folder_path), "file write error")
+                logger.warning(f"file write error {folder_path.parent}")
+                await database.encode_error(str(folder_path.parent), "file write error")
 
     async def runrecovery(self):
+        await self.file_recovery()
         self.audio_recovery()
         tasks = await database.get_encode_tasks()
         for task in tasks:
