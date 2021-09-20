@@ -10,6 +10,7 @@ from functools import wraps, partial
 import string
 import random
 from fastapi import File, UploadFile
+import pathlib
 
 
 class filemanager_class:
@@ -130,6 +131,9 @@ class filemanager_class:
                     await out_file.write(content)  # async write chunk
                 else:
                     break
+        folder_path = pathlib.Path(file_path).parent
+        # 空のfile.doneを作成
+        (folder_path / "file.done").touch()
 
     async def write_playlist(
             self, playlist_file: str, resolution: str = "init"):

@@ -13,6 +13,13 @@ class recovery_class():
             if not done_file_path.exists():
                 i.unlink()
 
+    def file_recovery(self):
+        folder_paths = pathlib.Path("./").glob("**/info.json")
+        for folder_path in folder_paths:
+            done_file_path - folder_path.parent / "file.done"
+            if not done_file_path.exists():
+                database.encode_error(str(folder_path), "file write error")
+
     async def runrecovery(self):
         self.audio_recovery()
         tasks = await database.get_encode_tasks()
