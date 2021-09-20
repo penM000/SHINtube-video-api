@@ -23,7 +23,7 @@ services:
     build:
       context: .
       dockerfile: ./docker/general-api/Dockerfile
-    
+    restart: always
     environment:
       - TZ=Asia/Tokyo
     volumes:
