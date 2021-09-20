@@ -6,6 +6,7 @@ import asyncio
 import os
 from typing import List
 from dataclasses import dataclass
+import pathlib
 
 
 class encoder_class:
@@ -338,23 +339,22 @@ class encoder_class:
             folderpath: str,
             filename: str,
             force: bool = False):
+        encode_path = pathlib.Path(folderpath)
         # audio.m3u8がファイルが存在していた場合
-        audio_path = f"{folderpath}/audio.m3u8"
-        if os.path.isfile(audio_path) or force:
+        if (encode_path / "audio.m3u8").exists() or force:
             return True
+
         # 空のaudio.m3u8を作成
-        with open(audio_path, "w"):
-            pass
+        (encode_path / "audio.m3u8").touch()
 
         # audioのエンコード
         command = self.audio_encode_command(folderpath, filename)
         await command_run(" ".join(command), "./")
         playlist_path = f"{folderpath}/playlist.m3u8"
         await filemanager.write_playlist(playlist_path, "audio")
-        audio_done_path = f"{folderpath}/audio.done"
+
         # 空のaudio.doneを作成
-        with open(audio_done_path, "w"):
-            pass
+        (encode_path / "audio.done").touch()
 
         return True
 
