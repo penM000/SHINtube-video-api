@@ -117,9 +117,6 @@ class encoder_class:
             "-y",
             "-vsync 1",
             f"-init_hw_device vaapi=intel:{vaapi_device}",
-            "-hwaccel vaapi",
-            "-hwaccel_output_format vaapi",
-            "-hwaccel_device intel",
             "-filter_hw_device intel",
             f"-i {folderpath}/{filename}",
             "-r 30",
@@ -130,7 +127,7 @@ class encoder_class:
             f"-b:v {self.bitrate[resolution]}M",
             f"-bufsize {self.bitrate[resolution]*6}M",
             "-an",
-            f"-vf 'format=nv12|vaapi,hwupload,scale_vaapi=w=-2:h={resolution}'",
+            f"-vf 'format=nv12,hwupload,scale_vaapi=w=-2:h={resolution}'",
             "-profile high",
             "-compression_level 0",
             "-start_number 0",
@@ -390,7 +387,7 @@ class encoder_class:
         """
         logger.info("エンコードテスト開始")
         self.encode_worker = 0
-        """
+        
         # vaapi のテスト
         command = self.vaapi_encode_command(
             self.sample_dir, self.sample_video, 1080)
@@ -398,7 +395,7 @@ class encoder_class:
         if result.returncode == 0:
             self.encoder_available["vaapi"] = True
             self.encode_worker += 1
-
+        """
         # nvenc(HW) のテスト
         command = self.nvenc_hw_decode_encode_command(
             self.sample_dir, self.sample_video, 1080)
