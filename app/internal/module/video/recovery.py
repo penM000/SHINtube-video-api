@@ -1,5 +1,6 @@
 import pathlib
 from .database import database
+from .filemanager import filemanager
 from .queue import add_encode_queue
 from ..logger import logger
 video_dir = "video"
@@ -21,9 +22,16 @@ class recovery_class():
             if not done_file_path.exists():
                 logger.warning(f"file write error {folder_path.parent}")
                 await database.encode_error(str(folder_path.parent), "file write error")
+            info_data = await filemanager.read_json(folder_path)
+            count = 0
+            for key in info_data:
+                if isinstance(info_data[key], list):
+                    count += len(info_data[key])
+            if count == 0:
+                video_file_path = list(folder_path.parent.glob("1.*"))[0]
+                await add_encode_queue(str(video_file_path.parent), str(video_file_path.name))
 
     async def runrecovery(self):
-        await self.file_recovery()
         self.audio_recovery()
         tasks = await database.get_encode_tasks()
         for task in tasks:
@@ -31,6 +39,8 @@ class recovery_class():
                 await add_encode_queue(folderpath=task["video_directory"],
                                        filename=task["video_file_name"],
                                        encode_resolution=int(encode_resolution[:-1]))
+
+        await self.file_recovery()
         pass
 
 

@@ -387,7 +387,7 @@ class encoder_class:
         """
         logger.info("エンコードテスト開始")
         self.encode_worker = 0
-        
+
         # vaapi のテスト
         command = self.vaapi_encode_command(
             self.sample_dir, self.sample_video, 1080)
