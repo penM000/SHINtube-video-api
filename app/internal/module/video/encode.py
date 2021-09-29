@@ -82,7 +82,8 @@ class encoder_class:
         """
         video_info = await self.get_video_info(folderpath, filename)
         # 単位をMbpsに修正
-        input_video_bitrate = float(video_info.video_bitrate) / (1024**2) + 0.5
+        input_video_bitrate = (
+            float(video_info.video_bitrate) / (1024**2)) * 1.2
         bitrate = float(min(self.bitrate[resolution], input_video_bitrate))
         command = [
             "ffmpeg",
@@ -120,7 +121,8 @@ class encoder_class:
         """
         video_info = await self.get_video_info(folderpath, filename)
         # 単位をMbpsに修正
-        input_video_bitrate = float(video_info.video_bitrate) / (1024**2) + 0.5
+        input_video_bitrate = (
+            float(video_info.video_bitrate) / (1024**2)) * 1.2
         bitrate = float(min(self.bitrate[resolution], input_video_bitrate))
         command = [
             "ffmpeg",
@@ -160,7 +162,8 @@ class encoder_class:
         """
         video_info = await self.get_video_info(folderpath, filename)
         # 単位をMbpsに修正
-        input_video_bitrate = float(video_info.video_bitrate) / (1024**2) + 0.5
+        input_video_bitrate = (
+            float(video_info.video_bitrate) / (1024**2)) * 1.2
         bitrate = float(min(self.bitrate[resolution], input_video_bitrate))
         command = [
             "ffmpeg",
@@ -203,7 +206,8 @@ class encoder_class:
         """
         video_info = await self.get_video_info(folderpath, filename)
         # 単位をMbpsに修正
-        input_video_bitrate = float(video_info.video_bitrate) / (1024**2) + 0.5
+        input_video_bitrate = (
+            float(video_info.video_bitrate) / (1024**2)) * 1.2
         bitrate = float(min(self.bitrate[resolution], input_video_bitrate))
         command = [
             "/opt/bin/ffmpeg",
@@ -245,7 +249,8 @@ class encoder_class:
         """
         video_info = await self.get_video_info(folderpath, filename)
         # 単位をMbpsに修正
-        input_video_bitrate = float(video_info.video_bitrate) / (1024**2) + 0.5
+        input_video_bitrate = (
+            float(video_info.video_bitrate) / (1024**2)) * 1.2
         bitrate = float(min(self.bitrate[resolution], input_video_bitrate))
         command = [
             "/opt/bin/ffmpeg",
