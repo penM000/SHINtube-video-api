@@ -44,20 +44,24 @@ class encoder_class:
         pass
         return
 
-    def audio_encode_command(
+    async def audio_encode_command(
             self,
             folderpath: str,
             filename: str,):
         """
         オーディオ切り出しのコマンド
         """
+        video_info = await self.get_video_info(folderpath, filename)
+        # 単位をkbpsに修正
+        input_audio_bitrate = int(video_info.audio_bitrate) / 1024
+        bitrate = int(min(192, input_audio_bitrate))
         command = [
             "ffmpeg",
             "-hide_banner",
             "-y",
             f"-i {folderpath}/{filename}",
             "-vn",
-            "-b:a 192k",
+            f"-b:a {bitrate}k",
             "-aac_coder twoloop",
             "-start_number 0",
             "-hls_time 6",
@@ -67,7 +71,7 @@ class encoder_class:
         ]
         return command
 
-    def software_encode_command(
+    async def software_encode_command(
             self,
             folderpath: str,
             filename: str,
@@ -77,6 +81,10 @@ class encoder_class:
         ソフトウエアエンコード時のコマンド。
         遅い。
         """
+        video_info = await self.get_video_info(folderpath, filename)
+        # 単位をMbpsに修正
+        input_video_bitrate = float(video_info.video_bitrate) / (1024**2) + 0.5
+        bitrate = float(min(self.bitrate[resolution], input_video_bitrate))
         command = [
             "ffmpeg",
             "-hide_banner",
@@ -89,8 +97,8 @@ class encoder_class:
             f"-threads {thread}",
             "-vcodec libx264",
             "-bf 8",
-            f"-b:v {self.bitrate[resolution]}M",
-            f"-bufsize {self.bitrate[resolution]*6}M",
+            f"-b:v {bitrate}M",
+            f"-bufsize {bitrate*6}M",
             "-an",
             "-start_number 0",
             "-hls_time 6",
@@ -101,7 +109,7 @@ class encoder_class:
         ]
         return command
 
-    def vaapi_encode_command(
+    async def vaapi_encode_command(
             self,
             folderpath: str,
             filename: str,
@@ -111,6 +119,10 @@ class encoder_class:
         vaapi(intel)エンコード時のコマンド。
         VBRでのエンコードを行う。
         """
+        video_info = await self.get_video_info(folderpath, filename)
+        # 単位をMbpsに修正
+        input_video_bitrate = float(video_info.video_bitrate) / (1024**2) + 0.5
+        bitrate = float(min(self.bitrate[resolution], input_video_bitrate))
         command = [
             "ffmpeg",
             "-hide_banner",
@@ -124,8 +136,8 @@ class encoder_class:
             "-vcodec h264_vaapi",
             "-rc_mode VBR",
             "-bf 8",
-            f"-b:v {self.bitrate[resolution]}M",
-            f"-bufsize {self.bitrate[resolution]*6}M",
+            f"-b:v {bitrate}M",
+            f"-bufsize {bitrate*6}M",
             "-an",
             f"-vf 'format=nv12,hwupload,scale_vaapi=w=-2:h={resolution}'",
             "-profile high",
@@ -137,7 +149,7 @@ class encoder_class:
             f"{folderpath}/{resolution}p.m3u8"]
         return command
 
-    def nvenc_hw_decode_encode_command(
+    async def nvenc_hw_decode_encode_command(
             self,
             folderpath: str,
             filename: str,
@@ -147,6 +159,10 @@ class encoder_class:
         VBRでのエンコードを行う。
         エラー対策のため、実際に出力される動画の解像度は-1されている。
         """
+        video_info = await self.get_video_info(folderpath, filename)
+        # 単位をMbpsに修正
+        input_video_bitrate = float(video_info.video_bitrate) / (1024**2) + 0.5
+        bitrate = float(min(self.bitrate[resolution], input_video_bitrate))
         command = [
             "/opt/bin/ffmpeg",
             "-hide_banner",
@@ -159,8 +175,8 @@ class encoder_class:
             "-r 30",
             "-g 180",
             "-c:v h264_nvenc",
-            f"-b:v {self.bitrate[resolution]}M",
-            f"-bufsize {self.bitrate[resolution]*6}M",
+            f"-b:v {bitrate}M",
+            f"-bufsize {bitrate*6}M",
             "-an",
             "-preset medium",
             "-profile:v high",
@@ -175,7 +191,7 @@ class encoder_class:
         ]
         return command
 
-    def nvenc_sw_decode_encode_command(
+    async def nvenc_sw_decode_encode_command(
             self,
             folderpath: str,
             filename: str,
@@ -185,6 +201,10 @@ class encoder_class:
         VBRでのエンコードを行う。
         エラー対策のため、実際に出力される動画の解像度は-1されている。
         """
+        video_info = await self.get_video_info(folderpath, filename)
+        # 単位をMbpsに修正
+        input_video_bitrate = float(video_info.video_bitrate) / (1024**2) + 0.5
+        bitrate = float(min(self.bitrate[resolution], input_video_bitrate))
         command = [
             "/opt/bin/ffmpeg",
             "-hide_banner",
@@ -196,8 +216,8 @@ class encoder_class:
             "-r 30",
             "-g 180",
             "-c:v h264_nvenc",
-            f"-b:v {self.bitrate[resolution]}M",
-            f"-bufsize {self.bitrate[resolution]*6}M",
+            f"-b:v {bitrate}M",
+            f"-bufsize {bitrate*6}M",
             "-an",
             "-preset medium",
             "-profile:v high",
@@ -257,6 +277,8 @@ class encoder_class:
         """Class for keeping track of an item in inventory."""
         is_video: bool = False
         is_audio: bool = False
+        video_bitrate: int = 0
+        audio_bitrate: int = 0
         width: int = 0
         height: int = 0
 
@@ -275,10 +297,12 @@ class encoder_class:
             if "codec_type" in stream:
                 if "audio" == stream["codec_type"]:
                     obj.is_audio = True
+                    obj.audio_bitrate = int(stream["bit_rate"])
                 elif "video" == stream["codec_type"]:
                     obj.is_video = True
-                    obj.width = stream["width"]
-                    obj.height = stream["height"]
+                    obj.width = int(stream["width"])
+                    obj.height = int(stream["height"])
+                    obj.video_bitrate = int(stream["bit_rate"])
         return obj
 
     class encode_command_class:
@@ -314,19 +338,19 @@ class encoder_class:
 
         # ソフトウエアエンコード
         if use_encoder == "software":
-            command = self.software_encode_command(
+            command = await self.software_encode_command(
                 folderpath, filename, resolution)
         # vaapiエンコード
         elif use_encoder == "vaapi":
-            command = self.vaapi_encode_command(
+            command = await self.vaapi_encode_command(
                 folderpath, filename, resolution)
         # nvenc_hwエンコード
         elif use_encoder == "nvenc_hw_decode":
-            command = self.nvenc_hw_decode_encode_command(
+            command = await self.nvenc_hw_decode_encode_command(
                 folderpath, filename, resolution)
         # nvenc_swエンコード
         elif use_encoder == "nvenc_sw_decode":
-            command = self.nvenc_sw_decode_encode_command(
+            command = await self.nvenc_sw_decode_encode_command(
                 folderpath, filename, resolution)
         result = self.encode_command_class(use_encoder, command)
         return result
