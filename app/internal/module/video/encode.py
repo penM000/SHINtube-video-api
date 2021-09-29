@@ -25,9 +25,9 @@ class encoder_class:
         }
         # 利用可能なエンコーダ
         self.encoder_available = {
+            "vaapi": False,
             "nvenc_hw_decode": False,
             "nvenc_sw_decode": False,
-            "vaapi": False,
             "software": False
         }
         # 同時エンコード数
@@ -315,9 +315,9 @@ class encoder_class:
             folderpath: str,
             filename: str,
             resolution: int,) -> encode_command_class:
+        logger.info("encode_worker")
         if self.encode_worker == 0:
             await self.encode_test()
-
         # 利用可能なエンコーダーの探索
         use_encoder = None
         while True:
@@ -332,7 +332,6 @@ class encoder_class:
                     break
             else:
                 # 利用可能なエンコーダーがないときは待つ
-                logger.info("待機")
                 await asyncio.sleep(1)
                 continue
             # breakされていたらもう一度break
@@ -371,7 +370,7 @@ class encoder_class:
         (encode_path / "audio.m3u8").touch()
 
         # audioのエンコード
-        command = self.audio_encode_command(folderpath, filename)
+        command = await self.audio_encode_command(folderpath, filename)
         await command_run(" ".join(command), "./")
         playlist_path = f"{folderpath}/playlist.m3u8"
         await filemanager.write_playlist(playlist_path, "audio")
@@ -386,15 +385,19 @@ class encoder_class:
             folderpath: str,
             filename: str,
             resolution: int,):
+
         input_video_info = await self.get_video_info(folderpath, filename)
         logger.info(f"エンコード開始 {folderpath} {resolution}")
         if input_video_info.is_audio:
+            logger.info(f"音声エンコード開始 {folderpath}")
             await self.encode_audio(folderpath, filename)
+            logger.info(f"音声エンコード終了 {folderpath}")
         encoder = await self.get_encode_command(folderpath, filename, resolution)
-        logger.info(f"エンコード開始 エンコーダ{encoder.encoder}を利用")
+        logger.info(f"動画エンコード開始 エンコーダ{encoder.encoder}を利用")
         # エンコード実行
         result = await command_run(" ".join(encoder.command), "./")
-        logger.info(f"エンコード終了 エンコーダ{encoder.encoder}を開放")
+        logger.info(f"動画エンコード終了 エンコーダ{encoder.encoder}を開放")
+        logger.info(f"エンコード終了 {folderpath} {resolution}")
         # エンコーダーを開放
         self.encoder_used_status[encoder.encoder] = False
 
