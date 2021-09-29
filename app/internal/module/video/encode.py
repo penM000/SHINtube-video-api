@@ -384,15 +384,14 @@ class encoder_class:
             folderpath: str,
             filename: str,
             resolution: int,):
-        logger.info("エンコード開始")
         input_video_info = await self.get_video_info(folderpath, filename)
         if input_video_info.is_audio:
             await self.encode_audio(folderpath, filename)
         encoder = await self.get_encode_command(folderpath, filename, resolution)
-        logger.info(f"エンコーダ{encoder.encoder}を使用")
+        logger.info(f"エンコード開始 エンコーダ{encoder.encoder}を利用")
         # エンコード実行
         result = await command_run(" ".join(encoder.command), "./")
-        logger.info("エンコード完了")
+        logger.info(f"エンコード終了 エンコーダ{encoder.encoder}を開放")
         # エンコーダーを開放
         self.encoder_used_status[encoder.encoder] = False
 
@@ -441,7 +440,7 @@ class encoder_class:
             self.encoder_available["software"] = True
             self.encode_worker = 1
 
-        logger.info("エンコードテスト完了!!")
+        logger.info("エンコードテスト完了")
         logger.info(f"{self.encoder_available}")
         return self.encoder_available
 
