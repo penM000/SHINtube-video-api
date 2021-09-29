@@ -1,4 +1,6 @@
 import pathlib
+import asyncio
+from .encode import encoder
 from .database import database
 from .filemanager import filemanager
 from .queue import add_encode_queue
@@ -14,6 +16,11 @@ class recovery_class():
             done_file_path = i.parent / "audio.done"
             if not done_file_path.exists():
                 i.unlink()
+
+                input_video_file = list(i.parent.glob("1.*"))[0]
+                asyncio.create_task(
+                    encoder.encode_audio(
+                        str(i.parent), input_video_file.name))
 
     async def file_recovery(self):
         folder_paths = pathlib.Path("./").glob("**/info.json")
