@@ -11,6 +11,7 @@ import string
 import random
 from fastapi import File, UploadFile
 import pathlib
+from ..logger import logger
 
 
 class filemanager_class:
@@ -245,7 +246,7 @@ class filemanager_class:
             # 動画エンコード及び音声エンコードが終わっている場合
             if num == 0 and audio_done_path.exists():
                 original_video_path = list(info_path.parent.glob("1.*"))[0]
-                print(original_video_path)
+                logger.info(f"削除可能 {original_video_path}")
 
 
 filemanager = filemanager_class()

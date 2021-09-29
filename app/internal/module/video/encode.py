@@ -422,6 +422,9 @@ class encoder_class:
         # 空のaudio.doneを作成
         (encode_path / "audio.done").touch()
 
+        # 入力動画の削除判定
+        await filemanager.delete_original_video()
+
         return True
 
     async def encode(
@@ -443,6 +446,9 @@ class encoder_class:
         logger.info(f"エンコード終了 {folderpath} {resolution}")
         # エンコーダーを開放
         self.encoder_used_status[encoder.encoder] = False
+
+        # 入力動画の削除判定
+        await filemanager.delete_original_video()
 
         if result.returncode == 0:
             return True
