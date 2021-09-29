@@ -25,8 +25,8 @@ class encoder_class:
         # 利用可能なエンコーダ
         self.encoder_available = {
             "vaapi": False,
-            "nvenc_hw_decode": False,
-            "nvenc_sw_decode": False,
+            "nvenc_sw_decode1": False,
+            "nvenc_sw_decode2": False,
             "software": False
         }
         # 同時エンコード数
@@ -34,8 +34,8 @@ class encoder_class:
         # 現在利用中のエンコーダ
         self.encoder_used_status = {
             "vaapi": False,
-            "nvenc_hw_decode": False,
-            "nvenc_sw_decode": False,
+            "nvenc_sw_decode1": False,
+            "nvenc_sw_decode2": False,
             "software": False
         }
 
@@ -391,12 +391,12 @@ class encoder_class:
         elif use_encoder == "vaapi":
             command = await self.vaapi_sw_encode_command(
                 folderpath, filename, resolution)
-        # nvenc_hwエンコード
-        elif use_encoder == "nvenc_hw_decode":
-            command = await self.nvenc_hw_decode_encode_command(
+        # nvenc_swエンコード1
+        elif use_encoder == "nvenc_sw_decode1":
+            command = await self.nvenc_sw_decode_encode_command(
                 folderpath, filename, resolution)
-        # nvenc_swエンコード
-        elif use_encoder == "nvenc_sw_decode":
+        # nvenc_swエンコード2
+        elif use_encoder == "nvenc_sw_decode2":
             command = await self.nvenc_sw_decode_encode_command(
                 folderpath, filename, resolution)
         result = self.encode_command_class(use_encoder, command)
@@ -485,8 +485,9 @@ class encoder_class:
             self.sample_dir, self.sample_video, 1080)
         result = await command_run(" ".join(command), "./")
         if result.returncode == 0:
-            self.encoder_available["nvenc_sw_decode"] = True
-            self.encode_worker += 1
+            self.encoder_available["nvenc_sw_decode1"] = True
+            self.encoder_available["nvenc_sw_decode2"] = True
+            self.encode_worker += 2
             # nvencが利用可能ならばvaapiを使わないほうが早い
             if self.encoder_available["vaapi"]:
                 self.encoder_available["vaapi"] = False
