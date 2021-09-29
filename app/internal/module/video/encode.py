@@ -109,7 +109,7 @@ class encoder_class:
         ]
         return command
 
-    async def vaapi_encode_command(
+    async def vaapi_sw_encode_command(
             self,
             folderpath: str,
             filename: str,
@@ -140,6 +140,49 @@ class encoder_class:
             f"-bufsize {bitrate*6}M",
             "-an",
             f"-vf 'format=nv12,hwupload,scale_vaapi=w=-2:h={resolution}'",
+            "-profile high",
+            "-compression_level 0",
+            "-start_number 0",
+            "-hls_time 6",
+            "-hls_list_size 0",
+            "-f hls",
+            f"{folderpath}/{resolution}p.m3u8"]
+        return command
+
+    async def vaapi_hw_encode_command(
+            self,
+            folderpath: str,
+            filename: str,
+            resolution: int,
+            vaapi_device: str = "/dev/dri/renderD128") -> List[str]:
+        """
+        vaapi(intel)エンコード時のコマンド。
+        VBRでのエンコードを行う。
+        """
+        video_info = await self.get_video_info(folderpath, filename)
+        # 単位をMbpsに修正
+        input_video_bitrate = float(video_info.video_bitrate) / (1024**2) + 0.5
+        bitrate = float(min(self.bitrate[resolution], input_video_bitrate))
+        command = [
+            "ffmpeg",
+            "-hide_banner",
+            "-y",
+            "-vsync 1",
+            f"-init_hw_device vaapi=intel:{vaapi_device}",
+            "-hwaccel vaapi",
+            "-hwaccel_output_format vaapi",
+            "-hwaccel_device intel",
+            "-filter_hw_device intel",
+            f"-i {folderpath}/{filename}",
+            "-r 30",
+            "-g 180",
+            "-vcodec h264_vaapi",
+            "-rc_mode VBR",
+            "-bf 8",
+            f"-b:v {bitrate}M",
+            f"-bufsize {bitrate*6}M",
+            "-an",
+            f"-vf 'format=nv12|vaapi,hwupload,scale_vaapi=w=-2:h={resolution}'",
             "-profile high",
             "-compression_level 0",
             "-start_number 0",
@@ -315,7 +358,6 @@ class encoder_class:
             folderpath: str,
             filename: str,
             resolution: int,) -> encode_command_class:
-        logger.info("encode_worker")
         if self.encode_worker == 0:
             await self.encode_test()
         # 利用可能なエンコーダーの探索
@@ -343,7 +385,7 @@ class encoder_class:
                 folderpath, filename, resolution)
         # vaapiエンコード
         elif use_encoder == "vaapi":
-            command = await self.vaapi_encode_command(
+            command = await self.vaapi_sw_encode_command(
                 folderpath, filename, resolution)
         # nvenc_hwエンコード
         elif use_encoder == "nvenc_hw_decode":
@@ -370,10 +412,12 @@ class encoder_class:
         (encode_path / "audio.m3u8").touch()
 
         # audioのエンコード
+        logger.info(f"音声エンコード開始 {folderpath}")
         command = await self.audio_encode_command(folderpath, filename)
         await command_run(" ".join(command), "./")
         playlist_path = f"{folderpath}/playlist.m3u8"
         await filemanager.write_playlist(playlist_path, "audio")
+        logger.info(f"音声エンコード終了 {folderpath}")
 
         # 空のaudio.doneを作成
         (encode_path / "audio.done").touch()
@@ -389,9 +433,8 @@ class encoder_class:
         input_video_info = await self.get_video_info(folderpath, filename)
         logger.info(f"エンコード開始 {folderpath} {resolution}")
         if input_video_info.is_audio:
-            logger.info(f"音声エンコード開始 {folderpath}")
-            await self.encode_audio(folderpath, filename)
-            logger.info(f"音声エンコード終了 {folderpath}")
+            asyncio.create_task(self.encode_audio(folderpath, filename))
+
         encoder = await self.get_encode_command(folderpath, filename, resolution)
         logger.info(f"動画エンコード開始 エンコーダ{encoder.encoder}を利用")
         # エンコード実行
@@ -418,7 +461,7 @@ class encoder_class:
         self.encode_worker = 0
 
         # vaapi のテスト
-        command = await self.vaapi_encode_command(
+        command = await self.vaapi_sw_encode_command(
             self.sample_dir, self.sample_video, 1080)
         result = await command_run(" ".join(command), "./")
         if result.returncode == 0:
