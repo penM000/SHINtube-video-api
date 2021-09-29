@@ -238,6 +238,7 @@ class filemanager_class:
         video_dir_path = pathlib.Path(self.video_dir)
         all_info_path = video_dir_path.glob("**/info.json")
         count = 0
+        size = 0
         for info_path in all_info_path:
             info_data = await self.read_json(str(info_path))
             num = 0
@@ -247,9 +248,12 @@ class filemanager_class:
             # 動画エンコード及び音声エンコードが終わっている場合
             if num == 0 and audio_done_path.exists():
                 original_video_path = list(info_path.parent.glob("1.*"))[0]
-                logger.info(f"削除可能 {original_video_path}")
+                _size = int(original_video_path.stat().st_size / (1024**2))
+                logger.info(f"削除可能 {original_video_path} {_size}MB")
+
+                size += _size
                 count += 1
-        logger.info(f"合計削除可能数 {count}")
+        logger.info(f"合計削除可能数 {count} 合計 {size}MB")
 
 
 filemanager = filemanager_class()
