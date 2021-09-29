@@ -25,9 +25,9 @@ class encoder_class:
         }
         # 利用可能なエンコーダ
         self.encoder_available = {
-            "vaapi": False,
             "nvenc_hw_decode": False,
             "nvenc_sw_decode": False,
+            "vaapi": False,
             "software": False
         }
         # 同時エンコード数
@@ -323,6 +323,7 @@ class encoder_class:
         while True:
             for encoder in self.encoder_available:
                 # 利用可能でかつ、利用されていない場合
+
                 if self.encoder_available[encoder] and \
                         not self.encoder_used_status[encoder]:
                     # エンコーダーを利用状態にする
@@ -331,7 +332,8 @@ class encoder_class:
                     break
             else:
                 # 利用可能なエンコーダーがないときは待つ
-                await asyncio.sleep(10)
+                logger.info("待機")
+                await asyncio.sleep(1)
                 continue
             # breakされていたらもう一度break
             break
@@ -385,6 +387,7 @@ class encoder_class:
             filename: str,
             resolution: int,):
         input_video_info = await self.get_video_info(folderpath, filename)
+        logger.info(f"エンコード開始 {folderpath} {resolution}")
         if input_video_info.is_audio:
             await self.encode_audio(folderpath, filename)
         encoder = await self.get_encode_command(folderpath, filename, resolution)
