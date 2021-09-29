@@ -237,6 +237,7 @@ class filemanager_class:
         """
         video_dir_path = pathlib.Path(self.video_dir)
         all_info_path = video_dir_path.glob("**/info.json")
+        count = 0
         for info_path in all_info_path:
             info_data = await self.read_json(str(info_path))
             num = 0
@@ -247,6 +248,8 @@ class filemanager_class:
             if num == 0 and audio_done_path.exists():
                 original_video_path = list(info_path.parent.glob("1.*"))[0]
                 logger.info(f"削除可能 {original_video_path}")
+                count += 1
+        logger.info(f"合計削除可能数 {count}")
 
 
 filemanager = filemanager_class()
