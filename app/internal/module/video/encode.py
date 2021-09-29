@@ -412,7 +412,7 @@ class encoder_class:
         self.encode_worker = 0
 
         # vaapi のテスト
-        command = self.vaapi_encode_command(
+        command = await self.vaapi_encode_command(
             self.sample_dir, self.sample_video, 1080)
         result = await command_run(" ".join(command), "./")
         if result.returncode == 0:
@@ -420,7 +420,7 @@ class encoder_class:
             self.encode_worker += 1
         """
         # nvenc(HW) のテスト
-        command = self.nvenc_hw_decode_encode_command(
+        command = await self.nvenc_hw_decode_encode_command(
             self.sample_dir, self.sample_video, 1080)
         result = await command_run(" ".join(command), "./")
         if result.returncode == 0:
@@ -428,7 +428,7 @@ class encoder_class:
             self.encode_worker += 1
         """
         # nvenc(SW) のテスト
-        command = self.nvenc_sw_decode_encode_command(
+        command = await self.nvenc_sw_decode_encode_command(
             self.sample_dir, self.sample_video, 1080)
         result = await command_run(" ".join(command), "./")
         if result.returncode == 0:
