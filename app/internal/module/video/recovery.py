@@ -11,16 +11,17 @@ video_dir = "video"
 class recovery_class():
     def audio_recovery(self):
         video_path = pathlib.Path("./")
-        audio_files_path = video_path.glob("**/audio.m3u8")
-        for i in audio_files_path:
-            done_file_path = i.parent / "audio.done"
+        info_paths = video_path.glob("**/info.json")
+        for info_path in info_paths:
+            done_file_path = info_path.parent / "audio.done"
             if not done_file_path.exists():
-                i.unlink()
-
-                input_video_file = list(i.parent.glob("1.*"))[0]
+                audio_m3u8_path = info_path.parent / "audio.m3u8"
+                if audio_m3u8_path.exists():
+                    audio_m3u8_path.unlink()
+                input_video_file = list(info_path.parent.glob("1.*"))[0]
                 asyncio.create_task(
                     encoder.encode_audio(
-                        str(i.parent), input_video_file.name))
+                        str(info_path.parent), input_video_file.name))
 
     async def file_recovery(self):
         folder_paths = pathlib.Path("./").glob("**/info.json")
