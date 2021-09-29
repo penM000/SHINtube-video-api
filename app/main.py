@@ -138,3 +138,9 @@ async def encodetasklist() -> dict:
 @app.get("/encode_test")
 async def encode_test():
     return await encoder.encode_test()
+
+
+@app.get("/encoder_status")
+async def encoder_status():
+    return {"encoder_used_status": encoder.encoder_used_status,
+            "encoder_available": encoder.encoder_available}
