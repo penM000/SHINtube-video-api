@@ -6,6 +6,7 @@ from typing import Any
 from .encode import encoder
 from .database import database
 from ..logger import logger
+from .filemanager import filemanager
 
 
 @dataclass(order=True)
@@ -36,6 +37,9 @@ async def encode_worker(queue: QueueItem):
         await database.encode_result(encode_config["folderpath"],
                                      encode_config["height"],
                                      result)
+
+        # 入力動画の削除判定
+        await filemanager.delete_original_video()
 
         # DBにdoneの更新
         queue.task_done()
