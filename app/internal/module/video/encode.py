@@ -487,6 +487,10 @@ class encoder_class:
         if result.returncode == 0:
             self.encoder_available["nvenc_sw_decode"] = True
             self.encode_worker += 1
+            # nvencが利用可能ならばvaapiを使わないほうが早い
+            if self.encoder_available["vaapi"]:
+                self.encoder_available["vaapi"] = False
+                self.encode_worker -= 1
 
         # ソフトウエアエンコードしか使えない場合
         if self.encode_worker == 0:
