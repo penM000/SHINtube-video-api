@@ -247,13 +247,16 @@ class filemanager_class:
             audio_done_path = info_path.parent / "audio.done"
             # 動画エンコード及び音声エンコードが終わっている場合
             if num == 0 and audio_done_path.exists():
-                original_video_path = list(info_path.parent.glob("1.*"))[0]
-                _size = int(original_video_path.stat().st_size / (1024**2))
-                logger.info(f"削除可能 {original_video_path} {_size}MB")
-
-                size += _size
-                count += 1
-        logger.info(f"合計削除可能数 {count} 合計 {size}MB")
+                temp = list(info_path.parent.glob("1.*"))
+                if len(temp) != 0:
+                    original_video_path = temp[0]
+                    _size = int(original_video_path.stat().st_size / (1024**2))
+                    logger.info(f"削除 {original_video_path} {_size}MB")
+                    size += _size
+                    count += 1
+                    original_video_path.unlink()
+        if count != 0:
+            logger.info(f"合計削除数 {count} 合計 {size}MB")
 
 
 filemanager = filemanager_class()
