@@ -442,6 +442,7 @@ class encoder_class:
 
         logger.info("エンコードテスト完了")
         logger.info(f"{self.encoder_available}")
+        logger.info(f"エンコードworker数={self.encode_worker}")
         return self.encoder_available
 
 
