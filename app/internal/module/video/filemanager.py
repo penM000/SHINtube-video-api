@@ -230,5 +230,22 @@ class filemanager_class:
             return True
         return False
 
+    async def delete_original_video(self):
+        """
+        エンコードが完了した入力動画を削除する関数
+        """
+        video_dir_path = pathlib.Path(self.video_dir)
+        all_info_path = video_dir_path.glob("**/info.json")
+        for info_path in all_info_path:
+            info_data = await self.read_json(str(info_path))
+            num = 0
+            num += len(info_data["encode_tasks"])
+            num += len(info_data["encode_error"])
+            audio_done_path = info_path.parent / "audio.done"
+            # 動画エンコード及び音声エンコードが終わっている場合
+            if num == 0 and audio_done_path.exists():
+                original_video_path = list(info_path.parent.glob("1.*"))[0]
+                print(original_video_path)
+
 
 filemanager = filemanager_class()

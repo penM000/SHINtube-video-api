@@ -144,3 +144,8 @@ async def encode_test():
 async def encoder_status():
     return {"encoder_used_status": encoder.encoder_used_status,
             "encoder_available": encoder.encoder_available}
+
+
+@app.get("/test")
+async def encoder_status():
+    return await filemanager.delete_original_video()
