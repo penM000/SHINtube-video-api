@@ -344,12 +344,18 @@ class encoder_class:
             if "codec_type" in stream:
                 if "audio" == stream["codec_type"]:
                     obj.is_audio = True
-                    obj.audio_bitrate = int(stream["bit_rate"])
+                    if "bit_rate" in stream:
+                        obj.audio_bitrate = int(stream["bit_rate"])
+                    else:
+                        obj.audio_bitrate = 999999999999999
                 elif "video" == stream["codec_type"]:
                     obj.is_video = True
                     obj.width = int(stream["width"])
                     obj.height = int(stream["height"])
-                    obj.video_bitrate = int(stream["bit_rate"])
+                    if "bit_rate" in stream:
+                        obj.video_bitrate = int(stream["bit_rate"])
+                    else:
+                        obj.video_bitrate = 99999999999999999
         return obj
 
     class encode_command_class:
