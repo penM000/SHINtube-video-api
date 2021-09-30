@@ -26,7 +26,6 @@ RUN apt-get update && \
         libgnutls28-dev \
         libaom-dev \
         libass-dev \
-        libdav1d-dev \
         libfdk-aac-dev \
         libmp3lame-dev \
         libopus-dev \
