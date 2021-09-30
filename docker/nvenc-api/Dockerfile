@@ -6,8 +6,34 @@ RUN apt-get update && apt-get install -y tzdata
 
 ENV TZ=Asia/Tokyo 
 
-RUN apt-get update &&\
-    apt-get -y install build-essential yasm cmake libtool libc6 libc6-dev unzip wget libnuma1 libnuma-dev git pkg-config curl &&\
+RUN apt-get update && \
+    apt-get install -y \ # 汎用
+        git \
+        pkg-config \
+        curl &&\
+    apt-get install -y \ # nvencのドキュメントに記載
+        build-essential \
+        yasm \
+        cmake \
+        libtool \
+        libc6 \
+        libc6-dev \
+        unzip \
+        wget \
+        libnuma1 \
+        libnuma-dev && \
+    apt-get install -y \ #ffmpegに利用するライブラリ
+        libgnutls28-dev \
+        libaom-dev \
+        libass-dev \
+        libdav1d-dev \
+        libfdk-aac-dev \
+        libmp3lame-dev \
+        libopus-dev \
+        libvorbis-dev \
+        libvpx-dev \
+        libx264-dev \
+        libx265-dev && \
     apt-get clean  &&\
     rm -r /var/lib/apt/lists/*
 
@@ -29,7 +55,19 @@ RUN git clone https://github.com/FFmpeg/FFmpeg ffmpeg/ &&\
         --enable-libnpp \
         --extra-cflags=-I/usr/local/cuda/include \
         --extra-ldflags=-L/usr/local/cuda/lib64 \
-        --nvccflags="-gencode arch=compute_75,code=sm_75 -O2" &&\
+        --nvccflags="-gencode arch=compute_75,code=sm_75 -O2" \
+        --enable-gpl \
+        --enable-gnutls \
+        --enable-libaom \
+        --enable-libass \
+        --enable-libfdk-aac \
+        --enable-libfreetype \
+        --enable-libmp3lame \
+        --enable-libopus \
+        --enable-libvorbis \
+        --enable-libvpx \
+        --enable-libx264 \
+        --enable-libx265 && \
     make -j$(nproc) && \
     make install && \
     cd /WORKDIR && \
