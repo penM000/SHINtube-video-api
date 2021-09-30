@@ -321,7 +321,8 @@ class encoder_class:
                     if "bit_rate" in stream:
                         obj.audio_bitrate = int(stream["bit_rate"])
                     else:
-                        obj.audio_bitrate = 999999999999999
+                        # 30Mbitぐらい
+                        obj.audio_bitrate = 30*(1024**2)
                 elif "video" == stream["codec_type"]:
                     obj.is_video = True
                     obj.width = int(stream["width"])
@@ -337,7 +338,8 @@ class encoder_class:
                         else:
                             obj.video_bitrate = int(stream["bit_rate"])
                     else:
-                        obj.video_bitrate = 99999999999999999
+                        # 30Mbitぐらい
+                        obj.video_bitrate = 30*(1024**2)
         return obj
 
     @dataclass
