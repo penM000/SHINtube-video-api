@@ -7,11 +7,11 @@ RUN apt-get update && apt-get install -y tzdata
 ENV TZ=Asia/Tokyo 
 
 RUN apt-get update && \
-    apt-get install -y \ # 汎用
+    apt-get install -y \
         git \
         pkg-config \
         curl &&\
-    apt-get install -y \ # nvencのドキュメントに記載
+    apt-get install -y \ 
         build-essential \
         yasm \
         cmake \
@@ -22,7 +22,7 @@ RUN apt-get update && \
         wget \
         libnuma1 \
         libnuma-dev && \
-    apt-get install -y \ #ffmpegに利用するライブラリ
+    apt-get install -y \ 
         libgnutls28-dev \
         libaom-dev \
         libass-dev \
