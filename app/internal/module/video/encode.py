@@ -343,7 +343,7 @@ class encoder_class:
     @dataclass
     class encode_command_class:
         encoder: str = ""
-        command: List[str] = []
+        command: list = ""
         bitrate: float = 0.0
 
     async def get_encode_command(
