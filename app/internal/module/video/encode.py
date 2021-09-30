@@ -353,7 +353,15 @@ class encoder_class:
                     obj.width = int(stream["width"])
                     obj.height = int(stream["height"])
                     if "bit_rate" in stream:
-                        obj.video_bitrate = int(stream["bit_rate"])
+                        # h264との圧縮倍率
+                        if stream["codec_name"] == "av1":
+                            obj.video_bitrate = int(stream["bit_rate"]) * 2
+                        elif stream["codec_name"] == "vp9":
+                            obj.video_bitrate = int(stream["bit_rate"]) * 1.5
+                        elif stream["codec_name"] == "hevc":
+                            obj.video_bitrate = int(stream["bit_rate"]) * 1.5
+                        else:
+                            obj.video_bitrate = int(stream["bit_rate"])
                     else:
                         obj.video_bitrate = 99999999999999999
         return obj
