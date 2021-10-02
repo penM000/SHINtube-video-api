@@ -305,6 +305,7 @@ class encoder_class:
 
     async def get_video_info(
             self, folderpath: str, filename: str) -> video_info_class:
+        # ffprobe で解析
         command = self.video_info_command(folderpath, filename)
         result = await command_run(" ".join(command), "./")
         try:
@@ -312,8 +313,10 @@ class encoder_class:
         except ValueError:
             result = {}
         obj = self.video_info_class()
+        # ビデオストリームがない場合
         if "streams" not in result:
             return obj
+
         for stream in result["streams"]:
             if "codec_type" in stream:
                 if "audio" == stream["codec_type"]:
@@ -322,11 +325,18 @@ class encoder_class:
                         obj.audio_bitrate = int(stream["bit_rate"])
                     else:
                         # 30Mbitぐらい
-                        obj.audio_bitrate = 30*(1024**2)
+                        obj.audio_bitrate = 30 * (1024**2)
                 elif "video" == stream["codec_type"]:
                     obj.is_video = True
                     obj.width = int(stream["width"])
                     obj.height = int(stream["height"])
+                    if "duration" in stream:
+                        # 入力ファイルからビットレートを推定
+                        video_file_path = pathlib.Path(folderpath) / filename
+                        video_file_size = video_file_path.stat().st_size
+                        video_bitrate = video_file_size * 8 / \
+                            1024 / float(stream["duration"])
+                        print(video_bitrate)
                     if "bit_rate" in stream:
                         # h264との圧縮倍率
                         if stream["codec_name"] == "av1":
@@ -336,10 +346,11 @@ class encoder_class:
                         elif stream["codec_name"] == "hevc":
                             obj.video_bitrate = int(stream["bit_rate"]) * 1.5
                         else:
-                            obj.video_bitrate = int(stream["bit_rate"])
+                            obj.video_bitrate = int(stream["bit_rate"]) * 1.1
+                        print(obj.video_bitrate)
                     else:
                         # 30Mbitぐらい
-                        obj.video_bitrate = 30*(1024**2)
+                        obj.video_bitrate = 30 * (1024**2)
         return obj
 
     @dataclass
