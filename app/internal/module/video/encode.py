@@ -336,7 +336,7 @@ class encoder_class:
                         video_file_size = video_file_path.stat().st_size
                         video_bitrate = video_file_size * 8 / \
                             1024 / float(stream["duration"])
-                        print("算出:"video_bitrate)
+                        print("算出:", video_bitrate)
                     if "bit_rate" in stream:
                         # h264との圧縮倍率
                         if stream["codec_name"] == "av1":
@@ -347,7 +347,7 @@ class encoder_class:
                             obj.video_bitrate = int(stream["bit_rate"]) * 1.5
                         else:
                             obj.video_bitrate = int(stream["bit_rate"]) * 1.1
-                        print("ffprobe:"obj.video_bitrate)
+                        print("ffprobe:", obj.video_bitrate)
                     else:
                         # 30Mbitぐらい
                         obj.video_bitrate = 30 * (1024**2)
