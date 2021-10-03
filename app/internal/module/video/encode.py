@@ -336,7 +336,7 @@ class encoder_class:
                         video_file_size = video_file_path.stat().st_size
                         video_bitrate = video_file_size * 8 / \
                             1024 / float(stream["duration"])
-                        print(video_bitrate)
+                        print("算出:"video_bitrate)
                     if "bit_rate" in stream:
                         # h264との圧縮倍率
                         if stream["codec_name"] == "av1":
@@ -347,7 +347,7 @@ class encoder_class:
                             obj.video_bitrate = int(stream["bit_rate"]) * 1.5
                         else:
                             obj.video_bitrate = int(stream["bit_rate"]) * 1.1
-                        print(obj.video_bitrate)
+                        print("ffprobe:"obj.video_bitrate)
                     else:
                         # 30Mbitぐらい
                         obj.video_bitrate = 30 * (1024**2)
@@ -419,6 +419,13 @@ class encoder_class:
             filename: str,
             force: bool = False):
         encode_path = pathlib.Path(folderpath)
+        # 入力ファイルの状態を取得
+        video_info = await self.get_video_info(folderpath, filename)
+        # 音声ストリームがない場合
+        if not video_info.is_audio:
+            # 空のaudio.doneを作成
+            (encode_path / "audio.done").touch()
+            return True
         # audio.m3u8がファイルが存在していた場合
         if (encode_path / "audio.m3u8").exists() or force:
             return True
@@ -426,11 +433,10 @@ class encoder_class:
         # 空のaudio.m3u8を作成
         (encode_path / "audio.m3u8").touch()
 
-        # ビットレート算出
-        video_info = await self.get_video_info(folderpath, filename)
-        # 単位をkbpsに修正
+        # ビットレート算出 単位をkbpsに修正
         input_audio_bitrate = int(video_info.audio_bitrate) / 1024
-        bitrate = int(min(192, input_audio_bitrate))
+        # 上限192Kbps 下限128Kbps
+        bitrate = int(min(192, max(input_audio_bitrate, 128)))
 
         # audioのエンコード
         logger.info(f"音声エンコード開始 {folderpath}")
@@ -456,10 +462,9 @@ class encoder_class:
             filename: str,
             resolution: int,):
 
-        input_video_info = await self.get_video_info(folderpath, filename)
         logger.info(f"エンコード開始 {folderpath} {resolution}")
-        if input_video_info.is_audio:
-            asyncio.create_task(self.encode_audio(folderpath, filename))
+        # 音声エンコード(別タスクで実行)
+        asyncio.create_task(self.encode_audio(folderpath, filename))
 
         encoder = await self.get_encode_command(folderpath, filename, resolution)
         logger.info(f"動画エンコード開始 エンコーダ{encoder.encoder}を利用")
