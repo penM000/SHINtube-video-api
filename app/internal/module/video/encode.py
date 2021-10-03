@@ -334,20 +334,22 @@ class encoder_class:
                         # 入力ファイルからビットレートを推定
                         video_file_path = pathlib.Path(folderpath) / filename
                         video_file_size = video_file_path.stat().st_size
-                        video_bitrate = video_file_size * 8 / \
-                            1024 / float(stream["duration"])
-                        print("算出:", video_bitrate)
-                    if "bit_rate" in stream:
-                        # h264との圧縮倍率
-                        if stream["codec_name"] == "av1":
-                            obj.video_bitrate = int(stream["bit_rate"]) * 2
-                        elif stream["codec_name"] == "vp9":
-                            obj.video_bitrate = int(stream["bit_rate"]) * 1.5
-                        elif stream["codec_name"] == "hevc":
-                            obj.video_bitrate = int(stream["bit_rate"]) * 1.5
+                        video_bitrate = video_file_size * \
+                            8 / float(stream["duration"])
+                        video_bitrate = int(video_bitrate)
+                        logger.info(f"入力ビットレート:{video_bitrate}")
+                        if "codec_name" in stream:
+                            if stream["codec_name"] == "av1":
+                                obj.video_bitrate = video_bitrate * 2
+                            elif stream["codec_name"] == "vp9":
+                                obj.video_bitrate = video_bitrate * 1.5
+                            elif stream["codec_name"] == "hevc":
+                                obj.video_bitrate = video_bitrate * 1.5
+                            else:
+                                obj.video_bitrate = video_bitrate * 1.1
                         else:
-                            obj.video_bitrate = int(stream["bit_rate"]) * 1.1
-                        print("ffprobe:", obj.video_bitrate)
+                            # 30Mbitぐらい
+                            obj.video_bitrate = 30 * (1024**2)
                     else:
                         # 30Mbitぐらい
                         obj.video_bitrate = 30 * (1024**2)
