@@ -7,7 +7,7 @@ class database_class(filemanager_class):
     def __init__(self):
         filemanager_class.__init__(self)
 
-    async def update_info(self, year, cid, vid, title, explanation):
+    async def update_info(self, year, cid, vid, title, explanation, meta_data):
         # 既存のjsonを読み込み
         json_file = "/".join([self.video_dir, str(year),
                              cid, vid, "info.json"])
@@ -17,6 +17,7 @@ class database_class(filemanager_class):
         # jsonの更新
         _dict["title"] = title
         _dict["explanation"] = explanation
+        _dict["meta_data"] = meta_data
         # jsonの書き込み
         if self.write_json(json_file, _dict):
             return True

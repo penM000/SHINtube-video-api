@@ -164,7 +164,7 @@ class filemanager_class:
             # print('\n'.join(write_data))
             await f.write("\n".join(write_data) + "\n")
 
-    async def create_directory(self, year, cid, title, explanation) -> str:
+    async def create_directory(self, year, cid, title, explanation, meta_data) -> str:
         """
         ビデオディレクトリの作成関数
         """
@@ -186,6 +186,7 @@ class filemanager_class:
             "resolution": [],
             "encode_tasks": [],
             "encode_error": [],
+            "meta_data": meta_data,
         }
         self.write_json(_created_dir + "/info.json", dict_template)
         await self.write_playlist(_created_dir + "/playlist.m3u8", "init")

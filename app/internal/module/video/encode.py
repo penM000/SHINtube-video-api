@@ -347,7 +347,7 @@ class encoder_class:
                             elif stream["codec_name"] == "hevc":
                                 obj.video_bitrate = video_bitrate * 1.7
                             else:
-                                obj.video_bitrate = video_bitrate * 1.3
+                                obj.video_bitrate = video_bitrate * 1.1
                         else:
                             # 30Mbitぐらい
                             obj.video_bitrate = 30 * (1024**2)

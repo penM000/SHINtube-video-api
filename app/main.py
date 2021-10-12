@@ -45,6 +45,7 @@ async def post_endpoint(
         cid: str,
         title: str,
         explanation: str,
+        meta_data: str = "",
         in_file: UploadFile = File(...),):
     """
     動画アップロード用\n
@@ -57,7 +58,7 @@ async def post_endpoint(
     explanation : [動画説明]\n
     """
     created_dir = await filemanager.create_directory(
-        year, cid, title, explanation)
+        year, cid, title, explanation, meta_data)
 
     background_tasks.add_task(
         backend_file_save_add_encode,
@@ -88,11 +89,12 @@ async def update_video(
         vid: str,
         title: str,
         explanation: str,
+        meta_data: str = "",
         in_file: UploadFile = File(...)):
     """
     動画修正用
     """
-    await database.update_info(year, cid, vid, title, explanation)
+    await database.update_info(year, cid, vid, title, explanation, meta_data)
     await database.delete_video(year, cid, vid)
 
     background_tasks.add_task(
@@ -108,11 +110,12 @@ async def update_info(
         vid: str,
         title: str,
         explanation: str,
+        meta_data: str = "",
 ):
     """
     info修正用
     """
-    await database.update_info(year, cid, vid, title, explanation)
+    await database.update_info(year, cid, vid, title, explanation, meta_data)
     return {"Result": "OK"}
 
 
@@ -145,7 +148,3 @@ async def encoder_status():
     return {"encoder_used_status": encoder.encoder_used_status,
             "encoder_available": encoder.encoder_available}
 
-
-@app.get("/test")
-async def encoder_status():
-    return await filemanager.delete_original_video()
