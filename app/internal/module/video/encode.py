@@ -330,6 +330,9 @@ class encoder_class:
                     obj.is_video = True
                     obj.width = int(stream["width"])
                     obj.height = int(stream["height"])
+                    if "avg_frame_rate" in stream:
+                        if stream["avg_frame_rate"] == "0/0":
+                            obj.is_video = False
                     if "duration" in stream:
                         # 入力ファイルからビットレートを推定
                         video_file_path = pathlib.Path(folderpath) / filename
