@@ -237,7 +237,7 @@ class filemanager_class:
         エンコードが完了した入力動画を削除する関数
         """
         video_dir_path = pathlib.Path(self.video_dir)
-        all_info_path = video_dir_path.glob("**/info.json")
+        all_info_path = await self.async_wrap(video_dir_path.glob)("**/info.json")
         count = 0
         size = 0
         for info_path in all_info_path:
@@ -258,6 +258,16 @@ class filemanager_class:
                     original_video_path.unlink()
         if count != 0:
             logger.info(f"合計削除数 {count} 合計 {size}MB")
+
+    async def delete_original_video_task(self, Minutes=10):
+        """
+        オリジナル動画を定期的に削除するバックグラウンドタスク
+        """
+        while True:
+            # logger.info("オリジナル動画の掃除")
+            await self.delete_original_video()
+            timer = Minutes * 60
+            await asyncio.sleep(int(timer))
 
 
 filemanager = filemanager_class()

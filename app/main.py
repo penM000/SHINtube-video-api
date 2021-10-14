@@ -8,7 +8,7 @@ from .internal.module.video.encode import encoder
 from fastapi import FastAPI, BackgroundTasks
 from fastapi import File, UploadFile
 from starlette.middleware.cors import CORSMiddleware
-
+import asyncio
 
 app = FastAPI()
 # app.mount("/video", StaticFiles(directory="./video"), name="video")
@@ -31,6 +31,7 @@ async def backend_file_save_add_encode(dir_path, in_file):
 @app.on_event("startup")
 async def startup_event():
     await recovery.runrecovery()
+    asyncio.create_task(filemanager.delete_original_video_task())
 
 
 @app.get("/")
@@ -147,4 +148,3 @@ async def encode_test():
 async def encoder_status():
     return {"encoder_used_status": encoder.encoder_used_status,
             "encoder_available": encoder.encoder_available}
-

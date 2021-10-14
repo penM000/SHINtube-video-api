@@ -39,7 +39,7 @@ async def encode_worker(queue: QueueItem):
                                      result)
 
         # 入力動画の削除判定
-        await filemanager.delete_original_video()
+        # await filemanager.delete_original_video()
 
         # DBにdoneの更新
         queue.task_done()
