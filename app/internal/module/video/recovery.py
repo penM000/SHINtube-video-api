@@ -69,8 +69,6 @@ class recovery_class():
         self.audio_recovery()
         await self.file_recovery()
         await self.encode_recovery()
-        
-        
 
 
 recovery = recovery_class()
