@@ -3,6 +3,7 @@
 *.m3u8
 bin/*
 video/*
+file/*
 !.gitkeep
 docker-compose.yml
 *.log
