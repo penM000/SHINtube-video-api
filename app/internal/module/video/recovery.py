@@ -36,7 +36,8 @@ class recovery_class():
             if not done_file_path.exists():
                 # POSTされたファイルが受け取れなかった場合エラー
                 logger.warning(f"file write error {info_path.parent}")
-                await database.encode_error(str(info_path.parent), "file write error")
+                await database.encode_error(str(info_path.parent),
+                                            "file write error")
             # info.jsonを取得
             info_data = await filemanager.read_json(info_path)
             count = 0
@@ -51,19 +52,25 @@ class recovery_class():
                 await add_encode_queue(str(video_file_path.parent),
                                        str(video_file_path.name))
 
-    
-
-    async def runrecovery(self):
-        self.audio_recovery()
+    async def encode_recovery(self):
+        # エンコード中で強制終了されたタスクを取得
         tasks = await database.get_encode_tasks()
         for task in tasks:
             for encode_resolution in task["encode_tasks"]:
+                # 1080pを1080に変換
+                resolution = int(encode_resolution[:-1])
+                # 解像度を指定してエンコードタスクに追加
                 await add_encode_queue(folderpath=task["video_directory"],
                                        filename=task["video_file_name"],
-                                       encode_resolution=int(encode_resolution[:-1]))
+                                       encode_resolution=resolution)
 
+    async def runrecovery(self):
+        # audio_recoveryは最優先で実行
+        self.audio_recovery()
         await self.file_recovery()
-        pass
+        await self.encode_recovery()
+        
+        
 
 
 recovery = recovery_class()

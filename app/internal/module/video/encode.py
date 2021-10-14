@@ -337,7 +337,7 @@ class encoder_class:
                         video_bitrate = video_file_size * \
                             8 / float(stream["duration"])
                         video_bitrate = int(video_bitrate)
-                        logger.info(f"入力ビットレート:{video_bitrate}")
+                        # logger.info(f"入力ビットレート:{video_bitrate}")
                         # コーデックごとのビットレート倍率
                         if "codec_name" in stream:
                             if stream["codec_name"] == "av1":
@@ -391,7 +391,7 @@ class encoder_class:
         video_info = await self.get_video_info(folderpath, filename)
         # 単位をMbpsに修正
         input_video_bitrate = (
-            float(video_info.video_bitrate) / (1024**2)) 
+            float(video_info.video_bitrate) / (1024**2))
         bitrate = float(min(self.bitrate[resolution], input_video_bitrate))
 
         # ソフトウエアエンコード
