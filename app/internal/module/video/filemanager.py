@@ -164,7 +164,8 @@ class filemanager_class:
             # print('\n'.join(write_data))
             await f.write("\n".join(write_data) + "\n")
 
-    async def create_directory(self, year, cid, title, explanation, meta_data) -> str:
+    async def create_directory(
+            self, year, cid, title, explanation, meta_data) -> str:
         """
         ビデオディレクトリの作成関数
         """
@@ -237,7 +238,9 @@ class filemanager_class:
         エンコードが完了した入力動画を削除する関数
         """
         video_dir_path = pathlib.Path(self.video_dir)
-        all_info_path = await self.async_wrap(video_dir_path.glob)("**/info.json")
+        # globを非同期化
+        async_task = self.async_wrap(video_dir_path.glob)
+        all_info_path = await async_task("**/info.json")
         count = 0
         size = 0
         for info_path in all_info_path:

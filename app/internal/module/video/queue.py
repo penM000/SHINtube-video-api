@@ -6,7 +6,6 @@ from typing import Any
 from .encode import encoder
 from .database import database
 from ..logger import logger
-from .filemanager import filemanager
 
 
 @dataclass(order=True)

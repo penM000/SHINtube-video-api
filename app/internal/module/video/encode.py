@@ -166,7 +166,10 @@ class encoder_class:
             f"-b:v {bitrate}M",
             f"-bufsize {bitrate*6}M",
             "-an",
-            f"-vf 'format=nv12|vaapi,hwupload,scale_vaapi=w=-2:h={resolution}'",
+            (
+                "-vf 'format=nv12|vaapi,hwupload,"
+                f"scale_vaapi=w=-2:h={resolution}'"
+            ),
             "-profile high",
             "-compression_level 0",
             "-start_number 0",
@@ -472,7 +475,8 @@ class encoder_class:
         # 音声エンコード(別タスクで実行)
         asyncio.create_task(self.encode_audio(folderpath, filename))
 
-        encoder = await self.get_encode_command(folderpath, filename, resolution)
+        encoder = await self.get_encode_command(
+            folderpath, filename, resolution)
         logger.info(f"動画エンコード開始 エンコーダ{encoder.encoder}を利用")
         # エンコード実行
         result = await command_run(" ".join(encoder.command), "./")
