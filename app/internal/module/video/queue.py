@@ -69,7 +69,7 @@ async def add_encode_queue(folderpath, filename, encode_resolution="Auto"):
         video_size = [360, 480, 720, 1080]
         for height in video_size:
             # 入力解像度が超えていれば追加
-            if input_video_info.height >= height:
+            if input_video_info.height >= height or height == 360:
                 await database.encode_task(folderpath, height)
                 encode_config = {
                     "folderpath": folderpath,
