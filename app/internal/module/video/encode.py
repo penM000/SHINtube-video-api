@@ -210,7 +210,10 @@ class encoder_class:
             "-bf 4",
             "-b_ref_mode 2",
             "-temporal-aq 1",
-            f"-vf scale_cuda=-2:{resolution-1}:interp_algo=lanczos",
+            (
+                f"-vf format=nv12,scale_cuda=-2:{resolution-1}"
+                ":interp_algo=lanczos"
+            ),
             "-hls_time 6",
             "-hls_list_size 0",
             "-f hls",
@@ -248,7 +251,10 @@ class encoder_class:
             "-bf 4",
             "-b_ref_mode 2",
             "-temporal-aq 1",
-            f"-vf hwupload,scale_cuda=-2:{resolution-1}:interp_algo=lanczos",
+            (
+                f"-vf format=nv12,hwupload,scale_cuda=-2:{resolution-1}"
+                ":interp_algo=lanczos"
+            ),
             "-hls_time 6",
             "-hls_list_size 0",
             "-f hls",
