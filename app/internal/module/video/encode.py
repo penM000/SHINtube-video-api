@@ -94,7 +94,7 @@ class encoder_class:
             "-hls_time 6",
             "-hls_list_size 0",
             "-f hls",
-            f"-vf scale=-2:{resolution}",
+            f"-vf scale=-2:{resolution}:flags=lanczos+accurate_rnd",
             f"{folderpath}/{resolution}p.m3u8"
         ]
         return command
@@ -210,7 +210,7 @@ class encoder_class:
             "-bf 4",
             "-b_ref_mode 2",
             "-temporal-aq 1",
-            f"-vf scale_cuda=-2:{resolution-1}",
+            f"-vf scale_cuda=-2:{resolution-1}:interp_algo=lanczos",
             "-hls_time 6",
             "-hls_list_size 0",
             "-f hls",
@@ -248,7 +248,7 @@ class encoder_class:
             "-bf 4",
             "-b_ref_mode 2",
             "-temporal-aq 1",
-            f"-vf hwupload,scale_cuda=-2:{resolution-1}",
+            f"-vf hwupload,scale_cuda=-2:{resolution-1}:interp_algo=lanczos",
             "-hls_time 6",
             "-hls_list_size 0",
             "-f hls",
@@ -274,7 +274,7 @@ class encoder_class:
             f"-ss {s}",
             "-vframes 1",
             "-f image2",
-            f"-vf scale=-2:{resolution}",
+            f"-vf scale=-2:{resolution}:flags=lanczos+accurate_rnd",
             f"{folderpath}/thumbnail_{resolution}.jpg"
         ]
         return command
