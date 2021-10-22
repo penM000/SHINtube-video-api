@@ -22,10 +22,13 @@ class recovery_class():
                 if audio_m3u8_path.exists():
                     audio_m3u8_path.unlink()
                 # audioのエンコードを実行
-                input_video_file = list(info_path.parent.glob("1.*"))[0]
-                asyncio.create_task(
-                    encoder.encode_audio(
-                        str(info_path.parent), input_video_file.name))
+                try:
+                    input_video_file = list(info_path.parent.glob("1.*"))[0]
+                    asyncio.create_task(
+                        encoder.encode_audio(
+                            str(info_path.parent), input_video_file.name))
+                except Exception:
+                    pass
 
     async def file_recovery(self):
         # info.jsonが存在するパスを取得
@@ -48,9 +51,12 @@ class recovery_class():
             # info.jsonが初期状態の場合
             if count == 0:
                 # エンコードタスクに追加
-                video_file_path = list(info_path.parent.glob("1.*"))[0]
-                await add_encode_queue(str(video_file_path.parent),
-                                       str(video_file_path.name))
+                try:
+                    video_file_path = list(info_path.parent.glob("1.*"))[0]
+                    await add_encode_queue(str(video_file_path.parent),
+                                           str(video_file_path.name))
+                except Exception:
+                    pass
 
     async def encode_recovery(self):
         # エンコード中で強制終了されたタスクを取得
