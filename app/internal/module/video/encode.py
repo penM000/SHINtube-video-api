@@ -211,7 +211,7 @@ class encoder_class:
             "-b_ref_mode 2",
             "-temporal-aq 1",
             (
-                f"-vf format=yuv444p,scale_cuda=-2:{resolution-1}"
+                f"-vf format=nv12,scale_cuda=-2:{resolution-1}"
                 ":interp_algo=lanczos"
             ),
             "-hls_time 6",
@@ -252,7 +252,7 @@ class encoder_class:
             "-b_ref_mode 2",
             "-temporal-aq 1",
             (
-                f"-vf format=yuv444p,hwupload,scale_cuda=-2:{resolution-1}"
+                f"-vf format=nv12,hwupload,scale_cuda=-2:{resolution-1}"
                 ":interp_algo=lanczos"
             ),
             "-hls_time 6",
