@@ -248,6 +248,12 @@ class filemanager_class:
             num = 0
             num += len(info_data["encode_tasks"])
             num += len(info_data["encode_error"])
+            num += len(info_data["resolution"])
+            # すべての要素が0なら初期状態
+            if num == 0:
+                continue
+            num -= len(info_data["resolution"])
+
             audio_done_path = info_path.parent / "audio.done"
             # 動画エンコード及び音声エンコードが終わっている場合
             if num == 0 and audio_done_path.exists():
