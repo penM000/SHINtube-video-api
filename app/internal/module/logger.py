@@ -5,7 +5,7 @@ import pathlib
 
 class logger_class:
     def __init__(self):
-        self.logfile = "test.log"
+        self.logfile = "error.log"
         self.logger = logging.getLogger("uvicorn.access")
         self.setup_loging()
 
