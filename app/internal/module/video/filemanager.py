@@ -273,10 +273,10 @@ class filemanager_class:
         オリジナル動画を定期的に削除するバックグラウンドタスク
         """
         while True:
-            # logger.info("オリジナル動画の掃除")
-            await self.delete_original_video()
             timer = Minutes * 60
             await asyncio.sleep(int(timer))
+            # logger.info("オリジナル動画の掃除")
+            await self.delete_original_video()
 
 
 filemanager = filemanager_class()
