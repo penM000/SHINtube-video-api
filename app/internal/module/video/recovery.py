@@ -15,20 +15,21 @@ class recovery_class():
         info_paths = video_path.glob("**/info.json")
         for info_path in info_paths:
             done_file_path = info_path.parent / "audio.done"
-            # audio.doneの存在を確認
-            if not done_file_path.exists():
-                audio_m3u8_path = info_path.parent / "audio.m3u8"
-                # audioエンコードが中断されている場合は初期化
-                if audio_m3u8_path.exists():
-                    audio_m3u8_path.unlink()
-                # audioのエンコードを実行
-                try:
-                    input_video_file = list(info_path.parent.glob("1.*"))[0]
-                    asyncio.create_task(
-                        encoder.encode_audio(
-                            str(info_path.parent), input_video_file.name))
-                except Exception:
-                    pass
+            # audio.doneが存在すれば処理はしない
+            if done_file_path.exists():
+                continue
+            # audio.doneが存在しなければ、エンコードを再開させる
+            audio_m3u8_path = info_path.parent / "audio.m3u8"
+            # audioエンコードが中断されている場合は初期化
+            if audio_m3u8_path.exists():
+                audio_m3u8_path.unlink()
+            # audioのエンコードを実行
+            temp = list(info_path.parent.glob("1.*"))
+            if temp:
+                input_video_file = temp[0]
+                encode_task = encoder.encode_audio(
+                    str(info_path.parent), input_video_file.name)
+                asyncio.create_task(encode_task)
 
     async def file_recovery(self):
         # info.jsonが存在するパスを取得
@@ -51,12 +52,11 @@ class recovery_class():
             # info.jsonが初期状態の場合
             if count == 0:
                 # エンコードタスクに追加
-                try:
-                    video_file_path = list(info_path.parent.glob("1.*"))[0]
+                temp = list(info_path.parent.glob("1.*"))
+                if temp:
+                    video_file_path = temp[0]
                     await add_encode_queue(str(video_file_path.parent),
                                            str(video_file_path.name))
-                except Exception:
-                    pass
 
     async def encode_recovery(self):
         # エンコード中で強制終了されたタスクを取得
