@@ -175,6 +175,7 @@ class encoder_class:
             ),
             "-hls_time 6",
             "-hls_list_size 0",
+            "-hls_segment_type fmp4",
             "-f hls",
             f"{folderpath}/{resolution}p.m3u8",
         ]
