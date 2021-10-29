@@ -140,91 +140,6 @@ class encoder_class:
             f"{folderpath}/{resolution}p.m3u8"]
         return command
 
-    def vaapi_hw_encode_command(
-            self,
-            folderpath: str,
-            filename: str,
-            resolution: int,
-            bitrate: float = 4,
-            vaapi_device: str = "/dev/dri/renderD128") -> List[str]:
-        """
-        vaapi(intel)エンコード時のコマンド。
-        VBRでのエンコードを行う。
-        """
-        command = [
-            "ffmpeg",
-            "-hide_banner",
-            "-y",
-            "-vsync 1",
-            f"-init_hw_device vaapi=intel:{vaapi_device}",
-            "-hwaccel vaapi",
-            "-hwaccel_output_format vaapi",
-            "-hwaccel_device intel",
-            "-filter_hw_device intel",
-            f"-i {folderpath}/{filename}",
-            "-r 30",
-            "-g 180",
-            "-vcodec h264_vaapi",
-            "-rc_mode VBR",
-            "-bf 8",
-            f"-b:v {bitrate}M",
-            f"-bufsize {round(bitrate*6,2)}M",
-            "-an",
-            (
-                "-vf 'format=nv12|vaapi,hwupload,"
-                f"scale_vaapi=w=-2:h={resolution}'"
-            ),
-            "-profile high",
-            "-compression_level 0",
-            "-start_number 0",
-            "-hls_time 6",
-            "-hls_list_size 0",
-            "-f hls",
-            f"{folderpath}/{resolution}p.m3u8"]
-        return command
-
-    def nvenc_hw_decode_encode_command(
-            self,
-            folderpath: str,
-            filename: str,
-            resolution: int,
-            bitrate: float = 4,) -> List[str]:
-        """
-        nvencエンコード時のコマンド。動画のデコードにはHWが利用される。
-        VBRでのエンコードを行う。
-        エラー対策のため、実際に出力される動画の解像度は-1されている。
-        """
-        command = [
-            "/opt/bin/ffmpeg",
-            "-hide_banner",
-            "-y",
-            "-vsync 1",
-            "-init_hw_device cuda",
-            "-hwaccel cuda",
-            "-hwaccel_output_format cuda",
-            f"-i {folderpath}/{filename}",
-            "-r 30",
-            "-g 180",
-            "-c:v h264_nvenc",
-            f"-b:v {bitrate}M",
-            f"-bufsize {round(bitrate*6,2)}M",
-            "-an",
-            "-preset medium",
-            "-profile:v high",
-            "-bf 4",
-            "-b_ref_mode 2",
-            "-temporal-aq 1",
-            (
-                f"-vf format=nv12,scale_cuda=-2:{resolution-1}"
-                ":interp_algo=lanczos"
-            ),
-            "-hls_time 6",
-            "-hls_list_size 0",
-            "-f hls",
-            f"{folderpath}/{resolution}p.m3u8",
-        ]
-        return command
-
     def nvenc_sw_decode_encode_command(
             self,
             folderpath: str,
@@ -522,15 +437,6 @@ class encoder_class:
             logger.warning(" ".join(command))
             logger.warning(result.stdout)
             logger.warning(result.stderr)
-        """
-        # nvenc(HW) のテスト
-        command = self.nvenc_hw_decode_encode_command(
-            self.sample_dir, self.sample_video, 1080)
-        result = await command_run(" ".join(command), "./")
-        if result.returncode == 0:
-            self.encoder_available["nvenc_hw_decode"] = True
-            self.encode_worker += 1
-        """
         # nvenc(SW) のテスト
         command = self.nvenc_sw_decode_encode_command(
             self.sample_dir, self.sample_video, 1080)
