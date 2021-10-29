@@ -88,6 +88,7 @@ class encoder_class:
             "-bf 8",
             f"-b:v {bitrate}M",
             f"-bufsize {round(bitrate*6,2)}M",
+            "-bsf:v 'filter_units=pass_types=1-5'",
             "-an",
             "-start_number 0",
             "-hls_time 6",
@@ -126,6 +127,7 @@ class encoder_class:
             "-bf 8",
             f"-b:v {bitrate}M",
             f"-bufsize {round(bitrate*6,2)}M",
+            "-bsf:v 'filter_units=pass_types=1-5'",
             "-an",
             (
                 "-vf 'framerate=30,format=nv12,hwupload,"
@@ -168,6 +170,7 @@ class encoder_class:
             "-profile:v high",
             "-bf 4",
             "-b_ref_mode 2",
+            "-bsf:v 'filter_units=pass_types=1-5'",
             "-temporal-aq 1",
             (
                 "-vf framerate=30,format=nv12,hwupload,"
