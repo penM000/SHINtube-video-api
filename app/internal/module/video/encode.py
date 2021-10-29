@@ -82,7 +82,6 @@ class encoder_class:
             "-vsync 1",
             f"-threads {thread}",
             f"-i {folderpath}/{filename}",
-            "-r 30",
             "-g 180",
             f"-threads {thread}",
             "-vcodec libx264",
@@ -90,17 +89,12 @@ class encoder_class:
             f"-b:v {bitrate}M",
             f"-bufsize {round(bitrate*6,2)}M",
             "-an",
-            "-pix_fmt yuv420p",
-            "-color_primaries bt709",
-            "-color_trc bt709",
-            "-colorspace bt709",
-            "-color_range tv",
             "-start_number 0",
             "-hls_time 6",
             "-hls_list_size 0",
             "-f hls",
             (
-                "-vf colorspace=all=bt709,"
+                "-vf framerate=30,"
                 f"scale=-2:{resolution}:flags=lanczos+accurate_rnd"
             ),
             f"{folderpath}/{resolution}p.m3u8"
@@ -126,7 +120,6 @@ class encoder_class:
             f"-init_hw_device vaapi=intel:{vaapi_device}",
             "-filter_hw_device intel",
             f"-i {folderpath}/{filename}",
-            "-r 30",
             "-g 180",
             "-vcodec h264_vaapi",
             "-rc_mode VBR",
@@ -134,13 +127,8 @@ class encoder_class:
             f"-b:v {bitrate}M",
             f"-bufsize {round(bitrate*6,2)}M",
             "-an",
-            "-pix_fmt yuv420p",
-            "-color_primaries bt709",
-            "-color_trc bt709",
-            "-colorspace bt709",
-            "-color_range tv",
             (
-                "-vf 'colorspace=all=bt709,format=nv12,hwupload,"
+                "-vf 'framerate=30,format=nv12,hwupload,"
                 f"scale_vaapi=w=-2:h={resolution}'"
             ),
             "-profile high",
@@ -179,12 +167,11 @@ class encoder_class:
             "-vcodec h264_vaapi",
             "-rc_mode VBR",
             "-bf 8",
-            "-color_range tv",
             f"-b:v {bitrate}M",
             f"-bufsize {round(bitrate*6,2)}M",
             "-an",
             (
-                "-vf 'colorspace=all=bt709,format=nv12|vaapi,hwupload,"
+                "-vf 'format=nv12|vaapi,hwupload,"
                 f"scale_vaapi=w=-2:h={resolution}'"
             ),
             "-profile high",
@@ -226,11 +213,6 @@ class encoder_class:
             "-profile:v high",
             "-bf 4",
             "-b_ref_mode 2",
-            "-pix_fmt yuv420p",
-            "-color_primaries bt709",
-            "-color_trc bt709",
-            "-colorspace bt709",
-            "-color_range tv",
             "-temporal-aq 1",
             (
                 f"-vf format=nv12,scale_cuda=-2:{resolution-1}"
@@ -262,7 +244,6 @@ class encoder_class:
             "-init_hw_device cuda",
             "-hwaccel_output_format cuda",
             f"-i {folderpath}/{filename}",
-            "-r 30",
             "-g 180",
             "-c:v h264_nvenc",
             f"-b:v {bitrate}M",
@@ -272,13 +253,9 @@ class encoder_class:
             "-profile:v high",
             "-bf 4",
             "-b_ref_mode 2",
-            "-color_primaries bt709",
-            "-color_trc bt709",
-            "-colorspace bt709",
-            "-color_range tv",
             "-temporal-aq 1",
             (
-                "-vf colorspace=all=bt709,format=nv12,hwupload,"
+                "-vf framerate=30,format=nv12,hwupload,"
                 f"scale_cuda=-2:{resolution-1}:interp_algo=lanczos"
             ),
             "-hls_time 6",
@@ -540,6 +517,11 @@ class encoder_class:
         if result.returncode == 0:
             self.encoder_available["vaapi"] = True
             self.encode_worker += 1
+        else:
+            logger.warning("encoder test failed vaapi")
+            logger.warning(" ".join(command))
+            logger.warning(result.stdout)
+            logger.warning(result.stderr)
         """
         # nvenc(HW) のテスト
         command = self.nvenc_hw_decode_encode_command(
@@ -561,6 +543,11 @@ class encoder_class:
             if self.encoder_available["vaapi"]:
                 self.encoder_available["vaapi"] = False
                 self.encode_worker -= 1
+        else:
+            logger.warning("encoder test failed nvenc")
+            logger.warning(" ".join(command))
+            logger.warning(result.stdout)
+            logger.warning(result.stderr)
 
         # ソフトウエアエンコードしか使えない場合
         if self.encode_worker == 0:
