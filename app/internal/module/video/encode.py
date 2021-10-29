@@ -99,7 +99,10 @@ class encoder_class:
             "-hls_time 6",
             "-hls_list_size 0",
             "-f hls",
-            f"-vf scale=-2:{resolution}:flags=lanczos+accurate_rnd",
+            (
+                "-vf colorspace=all=bt709,"
+                f"scale=-2:{resolution}:flags=lanczos+accurate_rnd"
+            ),
             f"{folderpath}/{resolution}p.m3u8"
         ]
         return command
@@ -136,7 +139,10 @@ class encoder_class:
             "-color_trc bt709",
             "-colorspace bt709",
             "-color_range tv",
-            f"-vf 'format=nv12,hwupload,scale_vaapi=w=-2:h={resolution}'",
+            (
+                "-vf 'colorspace=all=bt709,format=nv12,hwupload,"
+                f"scale_vaapi=w=-2:h={resolution}'"
+            ),
             "-profile high",
             "-compression_level 0",
             "-start_number 0",
@@ -173,16 +179,12 @@ class encoder_class:
             "-vcodec h264_vaapi",
             "-rc_mode VBR",
             "-bf 8",
-            "-pix_fmt yuv420p",
-            "-color_primaries bt709",
-            "-color_trc bt709",
-            "-colorspace bt709",
             "-color_range tv",
             f"-b:v {bitrate}M",
             f"-bufsize {bitrate*6}M",
             "-an",
             (
-                "-vf 'format=nv12|vaapi,hwupload,"
+                "-vf 'colorspace=all=bt709,format=nv12|vaapi,hwupload,"
                 f"scale_vaapi=w=-2:h={resolution}'"
             ),
             "-profile high",
@@ -270,15 +272,11 @@ class encoder_class:
             "-profile:v high",
             "-bf 4",
             "-b_ref_mode 2",
-            "-pix_fmt yuv420p",
-            "-color_primaries bt709",
-            "-color_trc bt709",
-            "-colorspace bt709",
             "-color_range tv",
             "-temporal-aq 1",
             (
-                f"-vf format=nv12,hwupload,scale_cuda=-2:{resolution-1}"
-                ":interp_algo=lanczos"
+                "-vf colorspace=all=bt709,format=nv12,hwupload,"
+                f"scale_cuda=-2:{resolution-1}:interp_algo=lanczos"
             ),
             "-hls_time 6",
             "-hls_list_size 0",
