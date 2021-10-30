@@ -49,10 +49,10 @@ volumes:
     driver_opts:
       type: 'none'
       o: 'bind'
-      device: './video'
+      device: '$PWD/video'
   filedata:
     driver: local
     driver_opts:
       type: 'none'
       o: 'bind'
-      device: './file'
+      device: '$PWD/file'
