@@ -1,11 +1,14 @@
 # セットアップ方法
 
 ## 実行環境の構築
+
 ### docker インストール
 dockerのインストールを行います。
 ```bash
+sudo apt install curl
 curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
+rm get-docker.sh
 sudo groupadd docker
 # sudo 無しで実行するためのオプション設定
 sudo usermod -aG docker $USER
@@ -13,7 +16,32 @@ sudo usermod -aG docker $USER
 docker ps
 ```
 
-#### nvidia driverのインストール(オプション)
+### docker-compose インストール
+docker-composeのインストールを行います。
+最新のバーションについては[こちらから確認できます。][docker-compose]
+
+**注意:docker-compose ver.2から「```docker compose```」にコマンドが変更されています。**
+```bash
+version=v2.0.1
+curl -OL https://github.com/docker/compose/releases/download/$version/docker-compose-linux-x86_64
+sudo mkdir -p /usr/local/lib/docker/cli-plugins
+sudo mv docker-compose-linux-x86_64 /usr/local/lib/docker/cli-plugins/docker-compose
+sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+# docker-composeでも実行できるようにする
+cat <<EOF | sudo tee /usr/local/bin/docker-compose
+#!/bin/bash
+docker compose \$@
+EOF
+sudo chmod +x /usr/local/bin/docker-compose
+```
+
+```bash
+docker compose ps
+docker-compose ps
+```
+
+### nvidia ハードウエアエンコード(オプション)
+#### nvidia driverのインストール
 ここではUbuntuでのドライバのインストール方法を解説します。
 Ubuntu以外の場合ではCUDA11.4.1に対応したドライバを導入してください。
 
@@ -55,21 +83,59 @@ Sat Oct 30 11:18:18 2021
 |                               |                      |                  N/A |
 +-------------------------------+----------------------+----------------------+
 ```
+#### NVIDIA ContainerToolkitのセットアップ
+[こちらを参考に][nvidia-docker2]```nvidia-docker2```のインストールを行います。
+```bash
+distribution=$(. /etc/os-release;echo $ID$VERSION_ID) \
+   && curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add - \
+   && curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
 
+sudo apt-get update
+sudo apt-get install -y nvidia-docker2
+sudo systemctl restart docker
+```
+コンテナ内で```nvidia-smi```が実行できることを確認します
+。
+```bash
+sudo docker run --rm --gpus all nvidia/cuda:11.0-base nvidia-smi
 
-- 任意の場所でGitのリポジトリをクローン
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 470.74       Driver Version: 470.74       CUDA Version: 11.4     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|===============================+======================+======================|
+|   0  Quadro RTX 5000     Off  | 00000000:3B:00.0 Off |                  Off |
+| 33%   27C    P8    18W / 230W |     15MiB / 16125MiB |      0%      Default |
+|                               |                      |                  N/A |
++-------------------------------+----------------------+----------------------+
+```
+
+## SHINtube-video-apiの構築
+この章ではSHINtube-video-apiの起動を行います。
+
+githubからレポジトリを取得します。
 ```bash
 git clone https://github.com/penM000/SHINtube-video-api
 ```
 
-- 使用するハードウエアエンコードを選択
+取得したレポジトリ内には、
+```docker-compose-general.yml```および```docker-compose-nvenc.yml```があります。
+このうちどちらかを、```docker-compose.yml```にコピーします、
+nvidiaによるハードウエアエンコードを行う場合には、```docker-compose-nvenc.yml```をコピーしてください。
 ```bash
+cd SHINtube-video-api
 # vaapi ソフトウエアエンコード用
 cp ./docker-compose-general.yml docker-compose.yml 
 # nvenc vaapi ソフトウエアエンコード用
 cp ./docker-compose-nvenc.yml docker-compose.yml 
 ```
-- 動画保保存する場所
+
+
+```docker-compose.yml```内には、動画の保存場所に関する設定があります。
+デフォルトでは、クローンされたレポジトリ内の```video```フォルダを参照しています。
+保存先を変更する場合は```./video```を他のパスに変更してください。
 ```yml
 volumes:
   videodata:
@@ -80,11 +146,13 @@ volumes:
       device: './video' # 動画の保尊先として利用するパスに変更する
 ```
 
-- コンテナイメージの作成(nvencの場合時間がかかります)
+
+次にコンテナイメージの作成を行います。***注意:nvencの場合時間がかかります***
 ```bash
 docker-compose build --no-cache
 ```
-- 起動
+
+システムの起動を行います。
 ```bash
 docker-compose up -d
 ```
@@ -98,9 +166,13 @@ curl http://127.0.0.1:8000/
 
 - エンコードテスト
 期待するエンコーダーが利用可能であることを確認
-※softwareは他が利用不可の時のみ利用可能
+
+**注意:「nvenc・vaapi・software」の順にどれか一つが有効になります。**
 ```bash
 curl http://127.0.0.1:8000/encode_test
 # 結果
-{"vaapi":true,"nvenc_hw_decode":true,"nvenc_sw_decode":true,"software":false}
+{"vaapi":false,"nvenc_sw_decode1":true,"nvenc_sw_decode2":true,"software":false}
 ```
+
+[nvidia-docker2]: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker
+[docker-compose]: https://github.com/docker/compose/releases
