@@ -85,16 +85,17 @@ class filemanager_class:
                 _dict[key] = list(set(_dict[key]))
         return _dict
 
-    async def read_json(self, json_file):
+    async def read_json(self, json_file) -> dict:
         """
         info.jsonを読み込む関数
         """
+        json_file = str(json_file)
         try:
             async with aiofiles.open(json_file, "r") as f:
                 json_str = await f.read()
                 _dict = json.loads(json_str)
-        except FileNotFoundError:
-            return False
+        except Exception:
+            return {}
         else:
             return _dict
 
