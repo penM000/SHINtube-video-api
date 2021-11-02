@@ -87,6 +87,12 @@ async def update_video(
     """
     動画修正用
     """
+    # meta_dataが空であれば更新しない
+    if meta_data == "":
+        json_file = "/".join([filemanager.video_dir, str(year),
+                              cid, vid, "info.json"])
+        json_data = await filemanager.read_json(json_file)
+        meta_data = json_data["meta_data"]
     await database.update_info(year, cid, vid, title, explanation, meta_data)
     await database.delete_video(year, cid, vid)
 
@@ -108,6 +114,12 @@ async def update_info(
     """
     info修正用
     """
+    # meta_dataが空であれば更新しない
+    if meta_data == "":
+        json_file = "/".join([filemanager.video_dir, str(year),
+                              cid, vid, "info.json"])
+        json_data = await filemanager.read_json(json_file)
+        meta_data = json_data["meta_data"]
     await database.update_info(year, cid, vid, title, explanation, meta_data)
     return {"Result": "OK"}
 
