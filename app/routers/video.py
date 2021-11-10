@@ -34,24 +34,27 @@ async def startup_event():
 @router.post("/upload")
 async def post_endpoint(
         background_tasks: BackgroundTasks,
-        year: int,
         cid: str,
         title: str,
         explanation: str,
         meta_data: str = "",
+        year: int = None,
+        service_name: str = None,
         in_file: UploadFile = File(...),):
     """
     動画アップロード用\n
     \n
     引数\n
     in_file :  [動画ファイル]\n
-    year    :  [年度]\n
+    service_name(year)    :  [年度]\n
     cid      :  [授業コード]\n
     title     : [動画タイトル]\n
     explanation : [動画説明]\n
     """
+    if service_name is None:
+        service_name = str(year)
     created_dir = await filemanager.create_directory(
-        year, cid, title, explanation, meta_data)
+        service_name, cid, title, explanation, meta_data)
 
     background_tasks.add_task(
         backend_file_save_add_encode,
@@ -61,81 +64,109 @@ async def post_endpoint(
 
 
 @router.post("/delete")
-async def video_delete(year: int, cid: str, vid: str):
+async def video_delete(cid: str,
+                       vid: str,
+                       year: int = None,
+                       service_name: str = None):
     """
     動画削除用\n
 
     引数\n
-    year    :  [年度]\n
+    service_name(year)    :  [年度]\n
     cid      :  [授業コード]\n
     vid      :  [動画コード]\n
     """
-    await filemanager.delete_directory(year, cid, vid)
+    if service_name is None:
+        service_name = str(year)
+    await filemanager.delete_directory(service_name, cid, vid)
     return {"Result": "OK"}
 
 
 @router.post("/updatevideo")
 async def update_video(
         background_tasks: BackgroundTasks,
-        year: int,
         cid: str,
         vid: str,
         title: str,
         explanation: str,
         meta_data: str = "",
+        year: int = None,
+        service_name: str = None,
         in_file: UploadFile = File(...)):
     """
     動画修正用
     """
+    if service_name is None:
+        service_name = str(year)
     # meta_dataが空であれば更新しない
     if meta_data == "":
-        json_file = "/".join([filemanager.video_dir, str(year),
+        json_file = "/".join([filemanager.video_dir, str(service_name),
                               cid, vid, "info.json"])
         json_data = await filemanager.read_json(json_file)
         meta_data = json_data["meta_data"]
-    await database.update_info(year, cid, vid, title, explanation, meta_data)
-    await database.delete_video(year, cid, vid)
+    await database.update_info(service_name,
+                               cid, vid, title,
+                               explanation, meta_data)
+    await database.delete_video(service_name, cid, vid)
 
     background_tasks.add_task(
         backend_file_save_add_encode,
-        f"video/{year}/{cid}/{vid}",
+        f"video/{service_name}/{cid}/{vid}",
         in_file)
 
 
 @router.post("/updateinfo")
 async def update_info(
-        year: int,
         cid: str,
         vid: str,
         title: str,
         explanation: str,
+        year: int = None,
+        service_name: str = None,
         meta_data: str = "",
 ):
     """
     info修正用
     """
+    if service_name is None:
+        service_name = str(year)
     # meta_dataが空であれば更新しない
     if meta_data == "":
-        json_file = "/".join([filemanager.video_dir, str(year),
+        json_file = "/".join([filemanager.video_dir, service_name,
                               cid, vid, "info.json"])
         json_data = await filemanager.read_json(json_file)
         meta_data = json_data["meta_data"]
-    await database.update_info(year, cid, vid, title, explanation, meta_data)
+    await database.update_info(
+        service_name,
+        cid,
+        vid,
+        title,
+        explanation,
+        meta_data)
     return {"Result": "OK"}
 
 
 @router.get("/videolist")
-async def video_list(year: int, cid: str):
+async def video_list(
+        cid: str,
+        year: int = None,
+        service_name: str = None,):
     """
     動画一覧取得用
     """
-
-    return await database.list_video_id(year, cid)
+    if service_name is None:
+        service_name = str(year)
+    return await database.list_video_id(service_name, cid)
 
 
 @router.get("/linklist")
-async def linklist(year: int, cid: str):
-    return await database.list_link(year, cid)
+async def linklist(
+        cid: str,
+        year: int = None,
+        service_name: str = None,):
+    if service_name is None:
+        service_name = str(year)
+    return await database.list_link(service_name, cid)
 
 
 @router.get("/encodetasklist")
@@ -152,3 +183,8 @@ async def encode_test():
 async def encoder_status():
     return {"encoder_used_status": encoder.encoder_used_status,
             "encoder_available": encoder.encoder_available}
+
+
+@router.get("/getall")
+async def getall() -> dict:
+    return await database.get_all_info()

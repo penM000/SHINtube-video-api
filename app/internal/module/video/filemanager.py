@@ -166,14 +166,14 @@ class filemanager_class:
             await f.write("\n".join(write_data) + "\n")
 
     async def create_directory(
-            self, year, cid, title, explanation, meta_data) -> str:
+            self, service_name, cid, title, explanation, meta_data) -> str:
         """
         ビデオディレクトリの作成関数
         """
         _created_dir = None
         while True:
             try:
-                _created_dir = "/".join([self.video_dir, str(year),
+                _created_dir = "/".join([self.video_dir, service_name,
                                         cid, self.GetRandomStr(10)])
                 await self.async_wrap(os.makedirs)(_created_dir)
             except FileExistsError:
@@ -194,11 +194,11 @@ class filemanager_class:
         await self.write_playlist(_created_dir + "/playlist.m3u8", "init")
         return _created_dir
 
-    async def delete_directory(self, year, cid, vid):
+    async def delete_directory(self, service_name, cid, vid):
         """
         ビデオディレクトリの削除関数
         """
-        _delete_dir = "/".join([self.video_dir, str(year), cid, vid])
+        _delete_dir = "/".join([self.video_dir, service_name, cid, vid])
         try:
             await self.async_wrap(shutil.rmtree)(_delete_dir)
         except Exception:
@@ -206,8 +206,8 @@ class filemanager_class:
         else:
             return True
 
-    async def delete_video(self, year, cid, vid):
-        _delete_dir = "/".join([self.video_dir, str(year), cid, vid])
+    async def delete_video(self, service_name, cid, vid):
+        _delete_dir = "/".join([self.video_dir, service_name, cid, vid])
         # info.json以外削除
         for filepath in glob.glob(f"{_delete_dir}/*"):
             if "info.json" in filepath:
@@ -215,11 +215,11 @@ class filemanager_class:
             else:
                 os.remove(filepath)
         # プレイリストの初期化
-        playlist_file = "/".join([self.video_dir, str(year),
+        playlist_file = "/".join([self.video_dir, service_name,
                                  cid, vid, "playlist.m3u8"])
         await self.write_playlist(playlist_file, "init")
         # 既存のjsonを読み込み
-        json_file = "/".join([self.video_dir, str(year),
+        json_file = "/".join([self.video_dir, service_name,
                              cid, vid, "info.json"])
         _dict = await self.read_json(json_file)
         if not _dict:
@@ -240,12 +240,13 @@ class filemanager_class:
         """
         video_dir_path = pathlib.Path(self.video_dir)
         # globを非同期化
-        async_task = self.async_wrap(video_dir_path.glob)
-        all_info_path = await async_task("**/info.json")
+        async_list = self.async_wrap(list)
+        all_info_path = video_dir_path.glob("**/info.json")
+        all_info_path = await async_list(all_info_path)
         count = 0
         size = 0
         for info_path in all_info_path:
-            info_data = await self.read_json(str(info_path))
+            info_data = await self.read_json(info_path)
             num = 0
             num += len(info_data["encode_tasks"])
             num += len(info_data["encode_error"])
@@ -265,7 +266,7 @@ class filemanager_class:
                     logger.info(f"削除 {original_video_path} {_size}MB")
                     size += _size
                     count += 1
-                    original_video_path.unlink()
+                    await self.async_wrap(original_video_path.unlink)()
         if count != 0:
             logger.info(f"合計削除数 {count} 合計 {size}MB")
 
