@@ -1,10 +1,11 @@
-import pathlib
 import asyncio
+import pathlib
+
 from .encode import encoder
 from .database import database
 from .filemanager import filemanager
 from .queue import add_encode_queue
-from ..logger import logger
+from ..module.logger import logger
 video_dir = "video"
 
 
@@ -24,7 +25,7 @@ class recovery_class():
             if audio_m3u8_path.exists():
                 audio_m3u8_path.unlink()
             # audioのエンコードを実行
-            temp = list(info_path.parent.glob("1.*"))
+            temp = list(info_path.parent.glob("original_video.*"))
             if temp:
                 input_video_file = temp[0]
                 encode_task = encoder.encode_audio(
@@ -52,7 +53,7 @@ class recovery_class():
             # info.jsonが初期状態の場合
             if count == 0:
                 # エンコードタスクに追加
-                temp = list(info_path.parent.glob("1.*"))
+                temp = list(info_path.parent.glob("original_video.*"))
                 if temp:
                     video_file_path = temp[0]
                     await add_encode_queue(str(video_file_path.parent),

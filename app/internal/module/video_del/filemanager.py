@@ -259,7 +259,7 @@ class filemanager_class:
             audio_done_path = info_path.parent / "audio.done"
             # 動画エンコード及び音声エンコードが終わっている場合
             if num == 0 and audio_done_path.exists():
-                temp = list(info_path.parent.glob("1.*"))
+                temp = list(info_path.parent.glob("original_video.*"))
                 if len(temp) != 0:
                     original_video_path = temp[0]
                     _size = int(original_video_path.stat().st_size / (1024**2))

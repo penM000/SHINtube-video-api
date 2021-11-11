@@ -109,7 +109,7 @@ class database_class(filemanager_class):
         for info_json_path in info_json_paths:
             info_json_data = await self.read_json(info_json_path)
             info_json_data["video_directory"] = str(info_json_path.parent)
-            input_video = list(info_json_path.parent.glob("1.*"))
+            input_video = list(info_json_path.parent.glob("original_video.*"))
             if input_video:
                 info_json_data["video_file_name"] = input_video[0].name
             else:

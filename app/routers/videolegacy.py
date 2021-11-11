@@ -10,9 +10,10 @@ from ..internal.video.queue import add_encode_queue
 from ..internal.video.recovery import recovery
 from ..internal.video.encode import encoder
 
+
 router = APIRouter(
-    prefix="/api/video",
-    tags=["video_api"],
+    prefix="",
+    tags=["video_api_legacy"],
     responses={404: {"description": "Not found"}},
 )
 
