@@ -63,6 +63,29 @@ async def upload_endpoint(
         in_file)
     return {"Result": "OK"}
 
+@router.post("/emptyfileupload")
+async def emptyupload_endpoint(
+        cid: str,
+        title: str,
+        explanation: str,
+        meta_data: str = "",
+        year: int = None,
+        service_name: str = None,):
+    """
+    空のinfo.json作成用\n
+    あとから、updatevideo・updateinfoが可能\n
+    引数\n
+    service_name(year)    :  [年度]\n
+    cid      :  [授業コード]\n
+    title     : [動画タイトル]\n
+    explanation : [動画説明]\n
+    """
+    if service_name is None:
+        service_name = str(year)
+    await filemanager.create_directory(
+        service_name, cid, title, explanation, meta_data)
+    return {"Result": "OK"}
+
 
 @router.post("/delete")
 async def video_delete(cid: str,
@@ -81,6 +104,9 @@ async def video_delete(cid: str,
         service_name = str(year)
     await filemanager.delete_directory(service_name, cid, vid)
     return {"Result": "OK"}
+
+
+
 
 
 @router.post("/updatevideo")
