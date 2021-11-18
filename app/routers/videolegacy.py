@@ -26,11 +26,6 @@ async def backend_file_save_add_encode(dir_path, in_file):
     await add_encode_queue(dir_path, f"original_video.{filename_extension}")
 
 
-@router.on_event("startup")
-async def startup_event():
-    await recovery.runrecovery()
-    task = filemanager.delete_original_video_task(60)
-    asyncio.create_task(task)
 
 
 @router.post("/upload")
