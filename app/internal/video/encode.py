@@ -5,7 +5,7 @@ import pathlib
 from dataclasses import dataclass
 from typing import List
 
-from ..module.command_run import command_run
+from ..module.general_module import general_module
 from ..module.logger import logger
 from .filemanager import filemanager
 
@@ -218,9 +218,9 @@ class encoder_class:
 
     async def thumbnail(self, folderpath: str, filename: str):
         command = self.thumbnail_command(folderpath, filename, 360)
-        await command_run(" ".join(command), "./")
+        await general_module.command_run(command, "./")
         command = self.thumbnail_command(folderpath, filename, 720)
-        await command_run(" ".join(command), "./")
+        await general_module.command_run(command, "./")
         pass
 
     def video_info_command(self, folderpath: str, filename: str):
@@ -247,7 +247,7 @@ class encoder_class:
             self, folderpath: str, filename: str) -> video_info_class:
         # ffprobe で解析
         command = self.video_info_command(folderpath, filename)
-        result = await command_run(" ".join(command), "./")
+        result = await general_module.command_run(command, "./")
         try:
             result = json.loads(result.stdout)
         except ValueError:
@@ -390,7 +390,7 @@ class encoder_class:
             folderpath, filename, bitrate)
 
         # エンコード実行
-        await command_run(" ".join(command), "./")
+        await general_module.command_run(command, "./")
 
         # プレイリストに書き込み
         playlist_path = f"{folderpath}/playlist.m3u8"
@@ -416,7 +416,7 @@ class encoder_class:
             folderpath, filename, resolution)
         logger.info(f"動画エンコード開始 エンコーダ{encoder.encoder}を利用")
         # エンコード実行
-        result = await command_run(" ".join(encoder.command), "./")
+        result = await general_module.command_run(encoder.command, "./")
         logger.info(f"動画エンコード終了 エンコーダ{encoder.encoder}を開放")
         logger.info(f"エンコード終了 {folderpath} {resolution}")
         # エンコーダーを開放
@@ -441,7 +441,7 @@ class encoder_class:
         # vaapi のテスト
         command = self.vaapi_sw_encode_command(
             self.sample_dir, self.sample_video, 1080)
-        result = await command_run(" ".join(command), "./")
+        result = await general_module.command_run(command, "./")
         if result.returncode == 0:
             self.encoder_available["vaapi"] = True
             self.encode_worker += 1
@@ -453,7 +453,7 @@ class encoder_class:
         # nvenc(SW) のテスト
         command = self.nvenc_sw_decode_encode_command(
             self.sample_dir, self.sample_video, 1080)
-        result = await command_run(" ".join(command), "./")
+        result = await general_module.command_run(command, "./")
         if result.returncode == 0:
             self.encoder_available["nvenc_sw_decode1"] = True
             self.encoder_available["nvenc_sw_decode2"] = True

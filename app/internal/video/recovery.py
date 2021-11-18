@@ -3,7 +3,7 @@ import pathlib
 
 from .encode import encoder
 from .database import database
-from .filemanager import filemanager
+from ..module.general_module import general_module
 from .queue import add_encode_queue
 from ..module.logger import logger
 video_dir = "video"
@@ -44,7 +44,7 @@ class recovery_class():
                 await database.encode_error(str(info_path.parent),
                                             "file write error")
             # info.jsonを取得
-            info_data = await filemanager.read_json(info_path)
+            info_data = await general_module.read_json(info_path)
             count = 0
             # info.jsonのリストの要素がすべて0なら初期状態
             for key in info_data:

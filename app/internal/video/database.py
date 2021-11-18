@@ -1,11 +1,12 @@
 import glob
 import pathlib
-from .filemanager import filemanager_class
+from ..module.general_module import general_module
+from .filemanager import FilemanagerClass
 
 
-class database_class(filemanager_class):
+class DatabaseClass(FilemanagerClass):
     def __init__(self):
-        filemanager_class.__init__(self)
+        FilemanagerClass.__init__(self)
 
     async def update_info(self,
                           service_name,
@@ -17,7 +18,7 @@ class database_class(filemanager_class):
         # 既存のjsonを読み込み
         json_file = "/".join([self.video_dir, service_name,
                              cid, vid, "info.json"])
-        _dict = await self.read_json(json_file)
+        _dict = await general_module.read_json(json_file)
         if not _dict:
             return False
         # jsonの更新
@@ -32,7 +33,7 @@ class database_class(filemanager_class):
     async def encode_result(self, folderpath, resolution, result=True):
         # 既存のjsonを読み込み
         json_file = "/".join([folderpath, "info.json"])
-        _dict = await self.read_json(json_file)
+        _dict = await general_module.read_json(json_file)
 
         if not _dict:
             return False
@@ -52,7 +53,7 @@ class database_class(filemanager_class):
     async def encode_task(self, folderpath, resolution):
         # 既存のjsonを読み込み
         json_file = "/".join([folderpath, "info.json"])
-        _dict = await self.read_json(json_file)
+        _dict = await general_module.read_json(json_file)
         if not _dict:
             return False
         if f"{resolution}p" in _dict["resolution"]:
@@ -67,7 +68,7 @@ class database_class(filemanager_class):
     async def encode_error(self, folderpath, message):
         # 既存のjsonを読み込み
         json_file = "/".join([folderpath, "info.json"])
-        _dict = await self.read_json(json_file)
+        _dict = await general_module.read_json(json_file)
         if not _dict:
             return False
         # 画質の追加
@@ -79,7 +80,7 @@ class database_class(filemanager_class):
 
     async def list_video_id(self, service_name, cid):
         _video_dir = "/".join([self.video_dir, service_name, cid])
-        temp = await self.async_wrap(glob.glob)(f"{_video_dir}/*")
+        temp = await general_module.async_wrap(glob.glob)(f"{_video_dir}/*")
         return [video_id.split("/")[-1]
                 for video_id in temp]
 
@@ -87,13 +88,13 @@ class database_class(filemanager_class):
         """
         cidフォルダ内のvidのinfo.jsonをすべて取得
         """
-        async_list = self.async_wrap(list)
+        async_list = general_module.async_wrap(list)
         cid_path_str = "/".join([self.video_dir, service_name, cid])
         cid_path = pathlib.Path(cid_path_str)
         info_json_paths = await async_list(cid_path.glob("*/info.json"))
         result = {}
         for info_json_path in info_json_paths:
-            json_data = await self.read_json(info_json_path)
+            json_data = await general_module.read_json(info_json_path)
             vid = info_json_path.parent.name
             result[vid] = json_data
         return result
@@ -102,19 +103,21 @@ class database_class(filemanager_class):
         """
         videoフォルダ上に存在するすべてのinfo.jsonの取得
         """
-        async_list = self.async_wrap(list)
+        async_list = general_module.async_wrap(list)
         video_path = pathlib.Path(self.video_dir)
         info_json_paths = await async_list(video_path.glob("**/info.json"))
         result = []
         for info_json_path in info_json_paths:
-            info_json_data = await self.read_json(info_json_path)
-            info_json_data["video_directory"] = str(info_json_path.parent)
-            input_video = list(info_json_path.parent.glob("original_video.*"))
-            if input_video:
-                info_json_data["video_file_name"] = input_video[0].name
-            else:
-                info_json_data["video_file_name"] = None
-            result.append(info_json_data)
+            info_json_data = await general_module.read_json(info_json_path)
+            if info_json_data:
+                info_json_data["video_directory"] = str(info_json_path.parent)
+                input_video = list(
+                    info_json_path.parent.glob("original_video.*"))
+                if input_video:
+                    info_json_data["video_file_name"] = input_video[0].name
+                else:
+                    info_json_data["video_file_name"] = None
+                result.append(info_json_data)
         return result
 
     async def get_encode_tasks(self):
@@ -126,4 +129,4 @@ class database_class(filemanager_class):
         return result
 
 
-database = database_class()
+database = DatabaseClass()

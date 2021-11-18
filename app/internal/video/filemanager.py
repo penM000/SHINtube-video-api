@@ -1,82 +1,67 @@
-
 import asyncio
 import datetime
 import glob
-import json
 import os
 import pathlib
-import random
 import shutil
-import string
-from functools import wraps, partial
+
 
 import aiofiles
 from fastapi import File, UploadFile
 
+from ..module.general_module import general_module
 from ..module.logger import logger
 
 
-class filemanager_class:
+class FilemanagerClass:
+    # 保存先のビデオフォルダ
+    video_dir = "video"
+    # m3u8のテンプレート
+    m3u8 = {
+        "init": [
+            "#EXTM3U",
+            "#EXT-X-VERSION:3",
+        ],
+        "audio": [
+            (
+                "#EXT-X-MEDIA:TYPE=AUDIO,"
+                "GROUP-ID=\"audio\",NAME=\"Audio\",LANGUAGE=\"ja\","
+                "AUTOSELECT=YES,URI=\"audio.m3u8\""
+            )],
+        240: [
+            (
+                "#EXT-X-STREAM-INF:BANDWIDTH=250000,"
+                "RESOLUTION=426x240,AUDIO=\"audio\""
+            ),
+            "240p.m3u8"],
+        360: [
+            (
+                "#EXT-X-STREAM-INF:BANDWIDTH=650000,"
+                "RESOLUTION=640x360,AUDIO=\"audio\""
+            ),
+            "360p.m3u8"],
+        480: [
+            (
+                "#EXT-X-STREAM-INF:BANDWIDTH=1200000,"
+                "RESOLUTION=854x480,AUDIO=\"audio\""
+            ),
+            "480p.m3u8"],
+        720: [
+            (
+                "#EXT-X-STREAM-INF:BANDWIDTH=2300000,"
+                "RESOLUTION=1280x720,AUDIO=\"audio\""
+            ),
+            "720p.m3u8"],
+        1080: [
+            (
+                "#EXT-X-STREAM-INF:BANDWIDTH=4300000,"
+                "RESOLUTION=1920x1080,AUDIO=\"audio\""
+            ),
+            "1080p.m3u8"],
+    }
+
     def __init__(self):
-        self.m3u8 = {
-            "init": [
-                "#EXTM3U",
-                "#EXT-X-VERSION:3",
-            ],
-            "audio": [
-                (
-                    "#EXT-X-MEDIA:TYPE=AUDIO,"
-                    "GROUP-ID=\"audio\",NAME=\"Audio\",LANGUAGE=\"ja\","
-                    "AUTOSELECT=YES,URI=\"audio.m3u8\""
-                )],
-            240: [
-                (
-                    "#EXT-X-STREAM-INF:BANDWIDTH=250000,"
-                    "RESOLUTION=426x240,AUDIO=\"audio\""
-                ),
-                "240p.m3u8"],
-            360: [
-                (
-                    "#EXT-X-STREAM-INF:BANDWIDTH=650000,"
-                    "RESOLUTION=640x360,AUDIO=\"audio\""
-                ),
-                "360p.m3u8"],
-            480: [
-                (
-                    "#EXT-X-STREAM-INF:BANDWIDTH=1200000,"
-                    "RESOLUTION=854x480,AUDIO=\"audio\""
-                ),
-                "480p.m3u8"],
-            720: [
-                (
-                    "#EXT-X-STREAM-INF:BANDWIDTH=2300000,"
-                    "RESOLUTION=1280x720,AUDIO=\"audio\""
-                ),
-                "720p.m3u8"],
-            1080: [
-                (
-                    "#EXT-X-STREAM-INF:BANDWIDTH=4300000,"
-                    "RESOLUTION=1920x1080,AUDIO=\"audio\""
-                ),
-                "1080p.m3u8"],
-        }
-        # 保存先のビデオフォルダ
-        self.video_dir = "video"
-
-    def async_wrap(self, func):
-        @wraps(func)
-        async def run(*args, loop=None, executor=None, **kwargs):
-            if loop is None:
-                loop = asyncio.get_event_loop()
-            pfunc = partial(func, *args, **kwargs)
-            return await loop.run_in_executor(executor, pfunc)
-        return run
-
-    def GetRandomStr(self, num) -> str:
-        # 英数字をすべて取得
-        dat = string.digits + string.ascii_lowercase + string.ascii_uppercase
-        # 英数字からランダムに取得
-        return ''.join([random.choice(dat) for i in range(num)])
+        pass
 
     def remove_duplicates(self, _dict: dict) -> dict:
         """
@@ -87,54 +72,24 @@ class filemanager_class:
                 _dict[key] = list(set(_dict[key]))
         return _dict
 
-    async def read_json(self, json_file) -> dict:
-        """
-        info.jsonを読み込む関数
-        """
-        json_file = str(json_file)
-        try:
-            async with aiofiles.open(json_file, "r") as f:
-                json_str = await f.read()
-                _dict = json.loads(json_str)
-        except Exception:
-            return {}
-        else:
-            return _dict
-
-    def write_json(self, json_file, _dict):
+    def write_json(self, json_file, python_dict):
         """
         info.jsonに書き込む関数
         """
         # 重複の削除
-        _dict = self.remove_duplicates(_dict)
+        python_dict = self.remove_duplicates(python_dict)
         # 更新日の更新
         utc = datetime.timezone.utc
-        _dict["updated_at"] = datetime.datetime.now(utc).isoformat()
+        python_dict["updated_at"] = datetime.datetime.now(utc).isoformat()
         # エンコードタスクが完了している場合は削除
-        for i in _dict["encode_tasks"]:
-            if i in _dict["resolution"]:
-                _dict["encode_tasks"].remove(i)
+        for i in python_dict["encode_tasks"]:
+            if i in python_dict["resolution"]:
+                python_dict["encode_tasks"].remove(i)
         # ファイル書き込み
-        try:
-            with open(json_file, "w") as f:
-                json.dump(_dict, f, indent=4)
-        except BaseException:
-            return False
-        else:
-            return True
+        return general_module.write_json(json_file, python_dict)
 
     async def write_file(self, file_path, in_file: UploadFile = File(...)):
-        in_file.file.seek(0)
-        async with aiofiles.open(file_path, 'wb') as out_file:
-            while True:
-                # 書き込みサイズ(MB)
-                chunk = 32
-                # async read chunk
-                content = await in_file.read(chunk * 1048576)
-                if content:
-                    await out_file.write(content)  # async write chunk
-                else:
-                    break
+        await general_module.write_file(file_path, in_file)
         folder_path = pathlib.Path(file_path).parent
         # 空のfile.doneを作成
         (folder_path / "file.done").touch()
@@ -175,9 +130,10 @@ class filemanager_class:
         _created_dir = None
         while True:
             try:
+                temp_dir_name = general_module.GetRandomStr(10)
                 _created_dir = "/".join([self.video_dir, service_name,
-                                        cid, self.GetRandomStr(10)])
-                await self.async_wrap(os.makedirs)(_created_dir)
+                                        cid, temp_dir_name])
+                await general_module.async_wrap(os.makedirs)(_created_dir)
             except FileExistsError:
                 pass
             else:
@@ -202,7 +158,7 @@ class filemanager_class:
         """
         _delete_dir = "/".join([self.video_dir, service_name, cid, vid])
         try:
-            await self.async_wrap(shutil.rmtree)(_delete_dir)
+            await general_module.async_wrap(shutil.rmtree)(_delete_dir)
         except Exception:
             return False
         else:
@@ -223,7 +179,7 @@ class filemanager_class:
         # 既存のjsonを読み込み
         json_file = "/".join([self.video_dir, service_name,
                              cid, vid, "info.json"])
-        _dict = await self.read_json(json_file)
+        _dict = await general_module.read_json(json_file)
         if not _dict:
             return False
         # jsonの更新
@@ -242,13 +198,13 @@ class filemanager_class:
         """
         video_dir_path = pathlib.Path(self.video_dir)
         # globを非同期化
-        async_list = self.async_wrap(list)
+        async_list = general_module.async_wrap(list)
         all_info_path = video_dir_path.glob("**/info.json")
         all_info_path = await async_list(all_info_path)
         count = 0
         size = 0
         for info_path in all_info_path:
-            info_data = await self.read_json(info_path)
+            info_data = await general_module.read_json(info_path)
             num = 0
             num += len(info_data["encode_tasks"])
             num += len(info_data["encode_error"])
@@ -268,7 +224,8 @@ class filemanager_class:
                     logger.info(f"削除 {original_video_path} {_size}MB")
                     size += _size
                     count += 1
-                    await self.async_wrap(original_video_path.unlink)()
+                    await general_module.async_wrap(
+                        original_video_path.unlink)()
         if count != 0:
             logger.info(f"合計削除数 {count} 合計 {size}MB")
 
@@ -283,4 +240,4 @@ class filemanager_class:
             await self.delete_original_video()
 
 
-filemanager = filemanager_class()
+filemanager = FilemanagerClass()
