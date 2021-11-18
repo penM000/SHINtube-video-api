@@ -1,81 +1,137 @@
 import asyncio
 import pathlib
+import json
+from typing import List, Union
 
 from .encode import encoder
 from .database import database
 from ..module.general_module import general_module
 from .queue import add_encode_queue
 from ..module.logger import logger
-video_dir = "video"
 
 
 class recovery_class():
-    def audio_recovery(self):
-        # info.jsonが存在するパスを取得
-        video_path = pathlib.Path("./")
-        info_paths = video_path.glob("**/info.json")
-        for info_path in info_paths:
-            done_file_path = info_path.parent / "audio.done"
-            # audio.doneが存在すれば処理はしない
-            if done_file_path.exists():
-                continue
-            # audio.doneが存在しなければ、エンコードを再開させる
-            audio_m3u8_path = info_path.parent / "audio.m3u8"
-            # audioエンコードが中断されている場合は初期化
-            if audio_m3u8_path.exists():
-                audio_m3u8_path.unlink()
-            # audioのエンコードを実行
-            temp = list(info_path.parent.glob("original_video.*"))
-            if temp:
-                input_video_file = temp[0]
-                encode_task = encoder.encode_audio(
-                    str(info_path.parent), input_video_file.name)
-                asyncio.create_task(encode_task)
 
-    async def file_recovery(self):
-        # info.jsonが存在するパスを取得
-        info_paths = pathlib.Path("./").glob("**/info.json")
-        for info_path in info_paths:
-            done_file_path = info_path.parent / "file.done"
-            # file.doneの存在を確認
-            if not done_file_path.exists():
-                # POSTされたファイルが受け取れなかった場合エラー
-                logger.warning(f"file write error {info_path.parent}")
-                await database.encode_error(str(info_path.parent),
-                                            "file write error")
-            # info.jsonを取得
-            info_data = await general_module.read_json(info_path)
-            count = 0
-            # info.jsonのリストの要素がすべて0なら初期状態
-            for key in info_data:
-                if isinstance(info_data[key], list):
-                    count += len(info_data[key])
-            # info.jsonが初期状態の場合
-            if count == 0:
-                # エンコードタスクに追加
-                temp = list(info_path.parent.glob("original_video.*"))
-                if temp:
-                    video_file_path = temp[0]
-                    await add_encode_queue(str(video_file_path.parent),
-                                           str(video_file_path.name))
+    async def get_all_info_path(self) -> List[pathlib.PosixPath]:
+        async_list = general_module.async_wrap(list)
+        current_directory = pathlib.Path("./")
+        info_paths = current_directory.glob("**/info.json")
+        info_paths = await async_list(info_paths)
+        return info_paths
 
-    async def encode_recovery(self):
-        # エンコード中で強制終了されたタスクを取得
-        tasks = await database.get_encode_tasks()
-        for task in tasks:
-            for encode_resolution in task["encode_tasks"]:
-                # 1080pを1080に変換
+    async def get_original_video_path(self,
+                                      video_content_path: pathlib.PosixPath
+                                      ) -> Union[pathlib.PosixPath, None]:
+        async_list = general_module.async_wrap(list)
+        # original_video.拡張子のパスを取得
+        temp = video_content_path.glob("**/original_video.*")
+        temp = await async_list(temp)
+        if temp:
+            original_video_path = temp[0]
+        else:
+            original_video_path = None
+        return original_video_path
+
+    async def encode_queue_recovery(self,
+                                    info_path: pathlib.PosixPath) -> None:
+        video_content_path = info_path.parent
+
+        # info.jsonを取得
+        info_data = await general_module.read_json(info_path)
+        count = 0
+
+        # info.jsonのリストの要素がすべて0なら初期状態
+        for key in info_data:
+            if isinstance(info_data[key], list):
+                count += len(info_data[key])
+
+        # original_video.拡張子のパスを取得
+        original_video_path = await self.get_original_video_path(
+            video_content_path)
+
+        # info.jsonが初期状態の場合
+        if count == 0 and original_video_path is not None:
+            video_file_path = original_video_path
+            await add_encode_queue(str(video_file_path.parent),
+                                   str(video_file_path.name))
+
+    async def encode_video_recovery(self, info_path: pathlib.PosixPath):
+        video_content_path = info_path.parent
+
+        # info.jsonの読み取り
+        info_data = await general_module.read_json(info_path)
+
+        # original_video.拡張子のパスを取得
+        original_video_path = await self.get_original_video_path(
+            video_content_path)
+
+        # エンコードタスクが残っている場合
+        for encode_resolution in info_data["encode_tasks"]:
+            if original_video_path is not None:
                 resolution = int(encode_resolution[:-1])
-                # 解像度を指定してエンコードタスクに追加
-                await add_encode_queue(folderpath=task["video_directory"],
-                                       filename=task["video_file_name"],
+                await add_encode_queue(folderpath=video_content_path,
+                                       filename=original_video_path.name,
                                        encode_resolution=resolution)
 
+    async def encode_audio_recovery(self, info_path: pathlib.PosixPath):
+        video_content_path = info_path.parent
+        audio_done_path = video_content_path / "audio.done"
+        audio_m3u8_path = video_content_path / "audio.m3u8"
+        # original_video.拡張子のパスを取得
+        original_video_path = await self.get_original_video_path(
+            video_content_path)
+        # audio.doneもしくは、audio.m3u8が存在しないとき
+        if not audio_done_path.exists() or not audio_m3u8_path.exists():
+            # original_video_pathが存在するとき
+            if original_video_path is not None:
+                # 音声エンコードを実行
+                encode_task = encoder.encode_audio(
+                    str(info_path.parent), original_video_path.name)
+                asyncio.create_task(encode_task)
+
+    async def directory_recovery(self, info_path: pathlib.PosixPath) -> None:
+        info_data = await general_module.read_json(info_path)
+        video_content_path = info_path.parent
+        # プレイリスト用の場合はチェックをしない
+        try:
+            meta_data = json.loads(info_data["meta_data"])
+        except Exception:
+            meta_data = {}
+        if "content_type" in meta_data:
+            if "playlist" in meta_data["content_type"]:
+                return
+        # audioの整合性チェック
+        audio_done_path = video_content_path / "audio.done"
+        audio_m3u8_path = video_content_path / "audio.m3u8"
+        # 正常に音声エンコードが完了している場合
+        if audio_done_path.exists():
+            pass
+        # 音声エンコードが途中の場合
+        elif audio_m3u8_path.exists():
+            audio_m3u8_path.unlink()
+
+        # original_videoの整合性チェック
+        file_done_path = video_content_path / "file.done"
+        # 正常にアップロードファイルが処理されている場合
+        if file_done_path.exists():
+            pass
+        # 正常にアップロードファイルが処理されなかった場合
+        else:
+            logger.warning(f"file write error {str(video_content_path)}")
+            await database.encode_error(str(video_content_path),
+                                        "file write error")
+
     async def runrecovery(self):
-        # audio_recoveryは最優先で実行
-        self.audio_recovery()
-        await self.file_recovery()
-        await self.encode_recovery()
+        info_paths = await self.get_all_info_path()
+        for info_path in info_paths:
+            # 実行順に依存関係あり
+            # video -> queue
+            # directory -> audio
+            # そうしないとqueueで追加されたものをvideoでもエンコードしてしまう
+            await self.directory_recovery(info_path)
+            await self.encode_video_recovery(info_path)
+            await self.encode_queue_recovery(info_path)
+            await self.encode_audio_recovery(info_path)
 
 
 recovery = recovery_class()
