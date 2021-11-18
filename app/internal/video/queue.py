@@ -44,9 +44,15 @@ async def encode_worker(queue: QueueItem):
         queue.task_done()
 
 
-async def add_encode_queue(folderpath, filename, encode_resolution="Auto"):
+async def add_encode_queue(folderpath: str,
+                           filename: str,
+                           encode_resolution="Auto"):
+    # 変数の処理
     global queue
     global encode_workers
+    folderpath = str(folderpath)
+    filename = str(filename)
+
     if queue is None:
         queue = asyncio.PriorityQueue()
         await encoder.encode_test()
@@ -56,6 +62,7 @@ async def add_encode_queue(folderpath, filename, encode_resolution="Auto"):
 
     # 動画の形式確認
     input_video_info = await encoder.get_video_info(folderpath, filename)
+    print(folderpath, filename)
     # 映像がなければエラー
     if not input_video_info.is_video:
         logger.warning(f"{folderpath} not video file")
