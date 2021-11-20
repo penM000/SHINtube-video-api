@@ -128,6 +128,7 @@ class FilemanagerClass:
         ビデオディレクトリの作成関数
         """
         _created_dir = None
+        """
         while True:
             try:
                 temp_dir_name = general_module.GetRandomStr(10)
@@ -138,6 +139,18 @@ class FilemanagerClass:
                 pass
             else:
                 break
+        """
+        cid_path = "/".join([self.video_dir, service_name, cid])
+        cid_path = pathlib.Path(cid_path)
+        while True:
+            temp_dir_name = general_module.GetRandomStr(10)
+            _created_dir = cid_path / temp_dir_name
+            if _created_dir.exists():
+                continue
+            else:
+                _created_dir.mkdir(parents=True)
+                break
+        _created_dir = str(_created_dir)
         utc = datetime.timezone.utc
         dict_template = {
             "title": title,
