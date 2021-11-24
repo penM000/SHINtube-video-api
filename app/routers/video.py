@@ -29,7 +29,7 @@ async def backend_file_save_add_encode(dir_path, in_file):
 
 @router.on_event("startup")
 async def startup_event():
-    # await encoder.encode_test()
+    await encoder.encode_test()
     await recovery.runrecovery()
     task = filemanager.delete_original_video_task(60)
     asyncio.create_task(task)
