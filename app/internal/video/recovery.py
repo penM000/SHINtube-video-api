@@ -1,6 +1,5 @@
 import asyncio
 import pathlib
-import json
 from typing import List, Union
 
 from .encode import encoder

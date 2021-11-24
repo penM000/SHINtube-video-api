@@ -1,5 +1,3 @@
-import asyncio
-
 from fastapi import APIRouter
 from fastapi import BackgroundTasks
 from fastapi import File, UploadFile
@@ -8,7 +6,6 @@ from ..internal.module.general_module import general_module
 from ..internal.video.filemanager import filemanager
 from ..internal.video.database import database
 from ..internal.video.queue import queue
-from ..internal.video.recovery import recovery
 from ..internal.video.encode import encoder
 
 

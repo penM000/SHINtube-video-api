@@ -1,7 +1,7 @@
 import asyncio
 
 from dataclasses import dataclass, field
-from typing import Any, List, Union
+from typing import Any, List
 
 from .encode import encoder
 from .database import database
@@ -19,7 +19,7 @@ class Queue_Class:
         priority: int
         item: Any = field(compare=False)
 
-    async def encode_worker(self, queue: asyncio.PriorityQueue):
+    async def encode_worker(self, queue: asyncio.PriorityQueue) -> None:
         """
         エンコードを実行するワーカー関数
         """
@@ -37,7 +37,10 @@ class Queue_Class:
                                          result)
             queue.task_done()
 
-    def create_encode_worker(self):
+    def create_encode_worker(self) -> None:
+        """
+        encode_workerの作成関数
+        """
         for task in self.encode_workers:
             task.cancel()
         self.PriorityQueue = asyncio.PriorityQueue()

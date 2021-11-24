@@ -88,7 +88,10 @@ class FilemanagerClass:
         # ファイル書き込み
         return general_module.write_json(json_file, python_dict)
 
-    async def write_file(self, file_path, in_file: UploadFile = File(...)):
+    async def write_file(self,
+                         file_path: str,
+                         in_file: UploadFile = File(...)):
+        file_path = str(file_path)
         await general_module.write_file(file_path, in_file)
         folder_path = pathlib.Path(file_path).parent
         # 空のfile.doneを作成
@@ -152,7 +155,7 @@ class FilemanagerClass:
         }
         self.write_json(_created_dir + "/info.json", dict_template)
         await self.write_playlist(_created_dir + "/playlist.m3u8", "init")
-        return _created_dir
+        return str(_created_dir)
 
     async def delete_directory(self, service_name, cid, vid):
         """
