@@ -99,6 +99,7 @@ class FilemanagerClass:
         """
         m3u8のプレイリストを作成する関数
         """
+        playlist_file = str(playlist_file)
         write_data = []
         if resolution == "init":
             write_data.extend(self.m3u8["init"])
@@ -128,18 +129,6 @@ class FilemanagerClass:
         ビデオディレクトリの作成関数
         """
         _created_dir = None
-        """
-        while True:
-            try:
-                temp_dir_name = general_module.GetRandomStr(10)
-                _created_dir = "/".join([self.video_dir, service_name,
-                                        cid, temp_dir_name])
-                await general_module.async_wrap(os.makedirs)(_created_dir)
-            except FileExistsError:
-                pass
-            else:
-                break
-        """
         cid_path = "/".join([self.video_dir, service_name, cid])
         cid_path = pathlib.Path(cid_path)
         while True:
