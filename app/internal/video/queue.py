@@ -1,98 +1,107 @@
 import asyncio
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, List, Union
 
 from .encode import encoder
 from .database import database
 from ..module.logger import logger
 
 
-@dataclass(order=True)
-class QueueItem:
-    """
-    キューアイテム
-    """
-    priority: int
-    item: Any = field(compare=False)
+class Queue_Class:
 
+    def __init__(self):
+        self.PriorityQueue = None
+        self.encode_workers: List[asyncio.Task] = []
 
-queue = None
-encode_tasks = []
+    @dataclass(order=True)
+    class QueueItem:
+        priority: int
+        item: Any = field(compare=False)
 
+    async def encode_worker(self, queue: asyncio.PriorityQueue):
+        """
+        エンコードを実行するワーカー関数
+        """
+        while True:
+            queue_item = await queue.get()
+            encode_config = queue_item.item
 
-async def encode_worker(queue: QueueItem):
-    while True:
-        # Get a "work item" out of the queue.
-        queue_item = await queue.get()
-        encode_config = queue_item.item
-        # DBにprogressの更新
+            result = await encoder.encode(
+                folderpath=encode_config["folderpath"],
+                filename=encode_config["filename"],
+                resolution=encode_config["resolution"])
 
-        result = await encoder.encode(
-            folderpath=encode_config["folderpath"],
-            filename=encode_config["filename"],
-            resolution=encode_config["height"])
+            await database.encode_result(encode_config["folderpath"],
+                                         encode_config["resolution"],
+                                         result)
+            queue.task_done()
 
-        await database.encode_result(encode_config["folderpath"],
-                                     encode_config["height"],
-                                     result)
+    def create_encode_worker(self):
+        for task in self.encode_workers:
+            task.cancel()
+        self.PriorityQueue = asyncio.PriorityQueue()
+        for i in range(2):
+            task = asyncio.create_task(self.encode_worker(self.PriorityQueue))
+            self.encode_workers.append(task)
 
-        # 入力動画の削除判定
-        # await filemanager.delete_original_video()
+    async def check_original_video(self,
+                                   folderpath: str,
+                                   filename: str) -> bool:
+        folderpath, filename = str(folderpath), str(filename)
+        # 動画の形式確認
+        input_video_info = await encoder.get_video_info(folderpath, filename)
+        # 映像がなければエラー
+        if not input_video_info.is_video:
+            logger.warning(f"{folderpath} not video file")
+            await database.encode_error(folderpath, "not video file")
+            return False
+        else:
+            return True
 
-        # DBにdoneの更新
-        queue.task_done()
+    async def add_encode_queue(self,
+                               folderpath: str,
+                               filename: str,
+                               resolution: int):
+        folderpath, filename = str(folderpath), str(filename)
+        resolution = int(resolution)
 
-
-async def add_encode_queue(folderpath: str,
-                           filename: str,
-                           encode_resolution="Auto"):
-    # 変数の処理
-    global queue
-    global encode_workers
-    folderpath = str(folderpath)
-    filename = str(filename)
-
-    if queue is None:
-        queue = asyncio.PriorityQueue()
-        await encoder.encode_test()
-        for i in range(encoder.encode_worker):
-            task = asyncio.create_task(encode_worker(queue))
-            encode_tasks.append(task)
-
-    # 動画の形式確認
-    input_video_info = await encoder.get_video_info(folderpath, filename)
-    print(folderpath, filename)
-    # 映像がなければエラー
-    if not input_video_info.is_video:
-        logger.warning(f"{folderpath} not video file")
-        await database.encode_error(folderpath, "not video file")
-        return
-    else:
-        await encoder.thumbnail(folderpath, filename)
-    # 解像度ごとにエンコードキューを追加
-    if encode_resolution == "Auto":
-        video_size = [360, 480, 720, 1080]
-        for height in video_size:
-            # 入力解像度が超えていれば追加
-            if input_video_info.height >= height or height == 360:
-                await database.encode_task(folderpath, height)
-                encode_config = {
-                    "folderpath": folderpath,
-                    "filename": filename,
-                    "height": height
-                }
-                queue_item = QueueItem(priority=height, item=encode_config)
-                queue.put_nowait(queue_item)
-
-    else:
-        # エンコードの再追加用
-        height = int(encode_resolution)
-        await database.encode_task(folderpath, height)
+        await database.encode_task(folderpath, resolution)
         encode_config = {
             "folderpath": folderpath,
             "filename": filename,
-            "height": height
+            "resolution": resolution
         }
-        queue_item = QueueItem(priority=height, item=encode_config)
-        queue.put_nowait(queue_item)
+        queue_item = self.QueueItem(priority=resolution, item=encode_config)
+        self.PriorityQueue.put_nowait(queue_item)
+
+    async def add_original_video(self,
+                                 folderpath: str,
+                                 filename: str,
+                                 encode_resolution="Auto"):
+        if self.PriorityQueue is None:
+            self.create_encode_worker()
+
+        if self.check_original_video(folderpath, filename):
+            await encoder.thumbnail(folderpath, filename)
+        else:
+            return False
+
+        input_video_info = await encoder.get_video_info(folderpath, filename)
+        if encode_resolution == "Auto":
+            video_resolution = [360, 480, 720, 1080]
+            for resolution in video_resolution:
+                # 入力解像度が超えていれば追加
+                if input_video_info.height >= resolution or resolution == 360:
+                    await self.add_encode_queue(folderpath,
+                                                filename,
+                                                resolution)
+            pass
+        else:
+            resolution = int(encode_resolution)
+            await self.add_encode_queue(folderpath,
+                                        filename,
+                                        resolution)
+
+
+queue = Queue_Class()

@@ -1,4 +1,5 @@
 import asyncio
+import pathlib
 
 from fastapi import APIRouter
 from fastapi import BackgroundTasks
@@ -7,7 +8,7 @@ from fastapi import File, UploadFile
 from ..internal.module.general_module import general_module
 from ..internal.video.filemanager import filemanager
 from ..internal.video.database import database
-from ..internal.video.queue import add_encode_queue
+from ..internal.video.queue import queue
 from ..internal.video.recovery import recovery
 from ..internal.video.encode import encoder
 
@@ -22,11 +23,13 @@ async def backend_file_save_add_encode(dir_path, in_file):
     filename_extension = "".join(in_file.filename.split(".")[-1:])
     video_file_path = f"./{dir_path}/original_video.{filename_extension}"
     await filemanager.write_file(video_file_path, in_file)
-    await add_encode_queue(dir_path, f"original_video.{filename_extension}")
+    await queue.add_original_video(dir_path,
+                                   f"original_video.{filename_extension}")
 
 
 @router.on_event("startup")
 async def startup_event():
+    # await encoder.encode_test()
     await recovery.runrecovery()
     task = filemanager.delete_original_video_task(60)
     asyncio.create_task(task)
@@ -61,7 +64,10 @@ async def upload_endpoint(
         backend_file_save_add_encode,
         created_dir,
         in_file)
-    return {"Result": "OK"}
+    created_dir_path = pathlib.Path(created_dir)
+    vid = created_dir_path.name
+    return {"Result": "OK", "vid": vid}
+
 
 @router.post("/emptyfileupload")
 async def emptyupload_endpoint(
@@ -82,9 +88,12 @@ async def emptyupload_endpoint(
     """
     if service_name is None:
         service_name = str(year)
-    await filemanager.create_directory(
+    created_dir = await filemanager.create_directory(
         service_name, cid, title, explanation, meta_data)
-    return {"Result": "OK"}
+    created_dir_path = pathlib.Path(created_dir)
+    (created_dir_path / "emptyfile").touch()
+    vid = created_dir_path.name
+    return {"Result": "OK", "vid": vid}
 
 
 @router.post("/delete")
@@ -104,9 +113,6 @@ async def video_delete(cid: str,
         service_name = str(year)
     await filemanager.delete_directory(service_name, cid, vid)
     return {"Result": "OK"}
-
-
-
 
 
 @router.post("/updatevideo")

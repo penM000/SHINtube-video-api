@@ -6,7 +6,7 @@ from typing import List, Union
 from .encode import encoder
 from .database import database
 from ..module.general_module import general_module
-from .queue import add_encode_queue
+from .queue import queue
 from ..module.logger import logger
 
 
@@ -52,8 +52,8 @@ class recovery_class():
         # info.jsonが初期状態の場合
         if count == 0 and original_video_path is not None:
             video_file_path = original_video_path
-            await add_encode_queue(str(video_file_path.parent),
-                                   str(video_file_path.name))
+            await queue.add_original_video(str(video_file_path.parent),
+                                           str(video_file_path.name))
 
     async def encode_video_recovery(self, info_path: pathlib.PosixPath):
         video_content_path = info_path.parent
@@ -69,9 +69,10 @@ class recovery_class():
         for encode_resolution in info_data["encode_tasks"]:
             if original_video_path is not None:
                 resolution = int(encode_resolution[:-1])
-                await add_encode_queue(folderpath=video_content_path,
-                                       filename=original_video_path.name,
-                                       encode_resolution=resolution)
+                await queue.add_original_video(
+                    folderpath=video_content_path,
+                    filename=original_video_path.name,
+                    encode_resolution=resolution)
 
     async def encode_audio_recovery(self, info_path: pathlib.PosixPath):
         video_content_path = info_path.parent
@@ -92,14 +93,10 @@ class recovery_class():
     async def directory_recovery(self, info_path: pathlib.PosixPath) -> None:
         info_data = await general_module.read_json(info_path)
         video_content_path = info_path.parent
-        # プレイリスト用の場合はチェックをしない
-        try:
-            meta_data = json.loads(info_data["meta_data"])
-        except Exception:
-            meta_data = {}
-        if "content_type" in meta_data:
-            if "playlist" in meta_data["content_type"]:
-                return
+        # emptyfileは見ない
+        if (video_content_path / "emptyfile").exists():
+            return
+
         # audioの整合性チェック
         audio_done_path = video_content_path / "audio.done"
         audio_m3u8_path = video_content_path / "audio.m3u8"

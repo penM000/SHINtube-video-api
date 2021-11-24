@@ -7,7 +7,7 @@ from fastapi import File, UploadFile
 from ..internal.module.general_module import general_module
 from ..internal.video.filemanager import filemanager
 from ..internal.video.database import database
-from ..internal.video.queue import add_encode_queue
+from ..internal.video.queue import queue
 from ..internal.video.recovery import recovery
 from ..internal.video.encode import encoder
 
@@ -23,9 +23,8 @@ async def backend_file_save_add_encode(dir_path, in_file):
     filename_extension = "".join(in_file.filename.split(".")[-1:])
     video_file_path = f"./{dir_path}/original_video.{filename_extension}"
     await filemanager.write_file(video_file_path, in_file)
-    await add_encode_queue(dir_path, f"original_video.{filename_extension}")
-
-
+    await queue.add_original_video(dir_path,
+                                   f"original_video.{filename_extension}")
 
 
 @router.post("/upload")
