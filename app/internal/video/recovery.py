@@ -91,7 +91,6 @@ class recovery_class():
                 asyncio.create_task(encode_task)
 
     async def directory_recovery(self, info_path: pathlib.PosixPath) -> None:
-        info_data = await general_module.read_json(info_path)
         video_content_path = info_path.parent
         # emptyfileは見ない
         if (video_content_path / "emptyfile").exists():
