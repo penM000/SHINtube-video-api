@@ -85,7 +85,7 @@ class Queue_Class:
         if self.PriorityQueue is None:
             self.create_encode_worker()
 
-        if self.check_original_video(folderpath, filename):
+        if await self.check_original_video(folderpath, filename):
             await encoder.thumbnail(folderpath, filename)
         else:
             return False
