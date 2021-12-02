@@ -143,8 +143,16 @@ volumes:
     driver_opts:
       type: 'none'
       o: 'bind'
-      device: './video' # 動画の保尊先として利用するパスに変更する
+      device: '$PWD/video' # 動画の保尊先として利用するパスに変更する
 ```
+
+もし、一度作成してしまった場合、上記で宣言したvolumesは削除されません。
+そのため、volumesの変更を行う場合は下記のコマンドでvolumesの削除を行う必要があります。
+(ホストのバインドマウントの場合はファイルは消えません)
+```bash
+docker-compose down --volumes --remove-orphans
+```
+
 
 
 次にコンテナイメージの作成を行います。***注意:nvencの場合時間がかかります***
