@@ -12,6 +12,10 @@ server{
     # keepalive
     proxy_socket_keepalive on;
 
+    # ベーシック認証
+    auth_basic	"Restricted";
+    auth_basic_user_file	/etc/nginx/.htpasswd;
+
 
     add_header Access-Control-Allow-Origin *;
     add_header Access-Control-Allow-Headers *;
