@@ -179,7 +179,9 @@ class FilemanagerClass:
         _delete_dir = "/".join([self.video_dir] + list(args))
         try:
             await general_module.async_wrap(shutil.rmtree)(_delete_dir)
-        except Exception:
+        except Exception as e:
+            logger.error("削除に失敗しました")
+            logger.error(e)
             return False
         else:
             return True
