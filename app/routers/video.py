@@ -29,7 +29,7 @@ async def backend_file_save_add_encode(dir_path, in_file):
 
 @router.on_event("startup")
 async def startup_event():
-    await encoder.encode_test()
+    # await encoder.encode_test()
     await recovery.runrecovery()
     task = filemanager.delete_original_video_task(60)
     asyncio.create_task(task)
@@ -96,7 +96,7 @@ async def emptyupload_endpoint(
     return {"Result": "OK", "vid": vid}
 
 
-@router.post("/delete")
+@router.delete("/delete")
 async def video_delete(cid: str,
                        vid: str,
                        year: int = None,
@@ -200,6 +200,26 @@ async def linklist(
     if service_name is None:
         service_name = str(year)
     return await database.list_link(service_name, cid)
+
+
+@router.get("/servicelist")
+async def servicelist():
+    directories = await filemanager.directory_list("video/")
+    result = []
+    for directory in directories:
+        if (directory / "automatic_created_dir").exists():
+            result.append(directory.name)
+    return result
+
+
+@router.get("/classlist")
+async def classlist(service_name: str):
+    directories = await filemanager.directory_list("video/" + service_name)
+    result = []
+    for directory in directories:
+        if (directory / "automatic_created_dir").exists():
+            result.append(directory.name)
+    return result
 
 
 @router.get("/encodetasklist")

@@ -4,7 +4,7 @@ import glob
 import os
 import pathlib
 import shutil
-
+from typing import List
 
 import aiofiles
 from fastapi import File, UploadFile
@@ -142,6 +142,9 @@ class FilemanagerClass:
             else:
                 _created_dir.mkdir(parents=True)
                 break
+        # service_nameのフォルダにマーカーを設置
+        (_created_dir.parent / "automatic_created_dir").touch()
+        (_created_dir.parent.parent / "automatic_created_dir").touch()
         _created_dir = str(_created_dir)
         utc = datetime.timezone.utc
         dict_template = {
@@ -243,6 +246,11 @@ class FilemanagerClass:
             await asyncio.sleep(int(timer))
             # logger.info("オリジナル動画の掃除")
             await self.delete_original_video()
+
+    async def directory_list(self, dir_path) -> List[pathlib.PosixPath]:
+        dir_path = pathlib.Path(str(dir_path))
+        async_list = general_module.async_wrap(list)
+        return await async_list(dir_path.iterdir())
 
 
 filemanager = FilemanagerClass()
