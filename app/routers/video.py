@@ -96,6 +96,18 @@ async def emptyupload_endpoint(
     return {"Result": "OK", "vid": vid}
 
 
+@router.delete("/service")
+async def service_delete(service_name: str):
+    await filemanager.delete_directory(service_name)
+    return {"Result": "OK"}
+
+
+@router.delete("/class")
+async def class_delete(service_name: str, cid: str,):
+    await filemanager.delete_directory(service_name, cid)
+    return {"Result": "OK"}
+
+
 @router.delete("/delete")
 async def video_delete(cid: str,
                        vid: str,

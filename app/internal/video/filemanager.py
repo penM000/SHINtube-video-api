@@ -160,11 +160,23 @@ class FilemanagerClass:
         await self.write_playlist(_created_dir + "/playlist.m3u8", "init")
         return str(_created_dir)
 
-    async def delete_directory(self, service_name, cid, vid):
+    async def delete_directory2(self, service_name, cid, vid):
         """
         ビデオディレクトリの削除関数
         """
         _delete_dir = "/".join([self.video_dir, service_name, cid, vid])
+        try:
+            await general_module.async_wrap(shutil.rmtree)(_delete_dir)
+        except Exception:
+            return False
+        else:
+            return True
+
+    async def delete_directory(self, *args):
+        """
+        ビデオディレクトリの削除関数
+        """
+        _delete_dir = "/".join([self.video_dir] + list(args))
         try:
             await general_module.async_wrap(shutil.rmtree)(_delete_dir)
         except Exception:
