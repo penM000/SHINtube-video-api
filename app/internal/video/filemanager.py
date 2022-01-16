@@ -135,7 +135,7 @@ class FilemanagerClass:
         cid_path = "/".join([self.video_dir, service_name, cid])
         cid_path = pathlib.Path(cid_path)
         while True:
-            temp_dir_name = general_module.GetRandomStr(10)
+            temp_dir_name = general_module.GetRandomStr(40)
             _created_dir = cid_path / temp_dir_name
             if _created_dir.exists():
                 continue
@@ -188,12 +188,17 @@ class FilemanagerClass:
 
     async def delete_video(self, service_name, cid, vid):
         _delete_dir = "/".join([self.video_dir, service_name, cid, vid])
+        delete_dir = pathlib.Path(_delete_dir)
+        if not (delete_dir / "info.json").exists():
+            logger.warning("管理外のフォルダを削除しようとしました")
+            return False
+
         # info.json以外削除
         for filepath in glob.glob(f"{_delete_dir}/*"):
             if "info.json" in filepath:
                 pass
             else:
-                os.remove(filepath)
+                await general_module.async_wrap(os.remove)(filepath)
         # プレイリストの初期化
         playlist_file = "/".join([self.video_dir, service_name,
                                  cid, vid, "playlist.m3u8"])
