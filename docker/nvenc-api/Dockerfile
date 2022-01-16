@@ -46,7 +46,7 @@ RUN git clone https://github.com/FFmpeg/nv-codec-headers.git &&\
     rm -r nv-codec-headers
 
 
-RUN git clone https://github.com/FFmpeg/FFmpeg ffmpeg/ &&\
+RUN git clone https://github.com/FFmpeg/FFmpeg ffmpeg/  -b n5.0 --depth 1 &&\
     cd ffmpeg && \
     ./configure \
         --enable-nonfree \
