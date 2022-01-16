@@ -165,6 +165,9 @@ docker-compose build --no-cache
 docker-compose up -d
 ```
 
+***補足:「nvidia version mismatch」のエラーメッセージが出た場合はシステムを再起動してください***
+
+
 - 起動確認
 ```bash
 curl http://127.0.0.1:8000/
