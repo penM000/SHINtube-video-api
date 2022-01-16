@@ -31,7 +31,7 @@ async def backend_file_save_add_encode(dir_path, in_file):
 async def startup_event():
     # await encoder.encode_test()
     await recovery.runrecovery()
-    task = filemanager.delete_original_video_task(60)
+    task = filemanager.delete_original_video_task(7*24*60)
     asyncio.create_task(task)
 
 
