@@ -33,8 +33,8 @@ app = FastAPI(title="SHINtube-video-api",
               },
               openapi_tags=tags_metadata)
 app.include_router(video.router)
-app.include_router(videolegacy.router)
-app.include_router(file_.router)
+# app.include_router(videolegacy.router)
+# app.include_router(file_.router)
 # app.mount("/video", StaticFiles(directory="./video"), name="video")
 app.add_middleware(
     CORSMiddleware,
