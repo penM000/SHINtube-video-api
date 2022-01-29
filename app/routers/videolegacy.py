@@ -46,7 +46,7 @@ async def upload_endpoint(
     """
     if service_name is None:
         service_name = str(year)
-    created_dir = await filemanager.create_directory(
+    created_dir = await filemanager.create_video_directory(
         service_name, cid, title, explanation, meta_data)
 
     background_tasks.add_task(

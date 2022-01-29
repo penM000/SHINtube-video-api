@@ -31,7 +31,7 @@ async def backend_file_save_add_encode(dir_path, in_file):
 async def startup_event():
     # await encoder.encode_test()
     await recovery.runrecovery()
-    task = filemanager.delete_original_video_task(7*24*60)
+    task = filemanager.delete_original_video_task(7 * 24 * 60)
     asyncio.create_task(task)
 
 
@@ -57,7 +57,7 @@ async def upload_endpoint(
     """
     if service_name is None:
         service_name = str(year)
-    created_dir = await filemanager.create_directory(
+    created_dir = await filemanager.create_video_directory(
         service_name, cid, title, explanation, meta_data)
 
     background_tasks.add_task(
@@ -88,12 +88,24 @@ async def emptyupload_endpoint(
     """
     if service_name is None:
         service_name = str(year)
-    created_dir = await filemanager.create_directory(
+    created_dir = await filemanager.create_video_directory(
         service_name, cid, title, explanation, meta_data)
     created_dir_path = pathlib.Path(created_dir)
     (created_dir_path / "emptyfile").touch()
     vid = created_dir_path.name
     return {"Result": "OK", "vid": vid}
+
+
+@router.post("/directory")
+async def directory(
+        service_name: str,
+        cid: str = None,):
+    if cid:
+        cid_path = "/".join([filemanager.video_dir, service_name, cid])
+    else:
+        cid_path = "/".join([filemanager.video_dir, service_name])
+    await filemanager.create_directory(cid_path)
+    return {"Result": "OK"}
 
 
 @router.delete("/service")
@@ -105,6 +117,17 @@ async def service_delete(service_name: str):
 @router.delete("/class")
 async def class_delete(service_name: str, cid: str,):
     await filemanager.delete_directory(service_name, cid)
+    return {"Result": "OK"}
+
+
+@router.delete("/directory")
+async def directory_delete(
+        service_name: str,
+        cid: str = None,):
+    if cid:
+        await filemanager.delete_directory(service_name, cid)
+    else:
+        await filemanager.delete_directory(service_name)
     return {"Result": "OK"}
 
 
@@ -158,6 +181,7 @@ async def update_video(
         backend_file_save_add_encode,
         f"video/{service_name}/{cid}/{vid}",
         in_file)
+    return {"Result": "OK"}
 
 
 @router.post("/updateinfo")

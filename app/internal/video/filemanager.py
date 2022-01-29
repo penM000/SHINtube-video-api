@@ -126,7 +126,18 @@ class FilemanagerClass:
             # print('\n'.join(write_data))
             await f.write("\n".join(write_data) + "\n")
 
-    async def create_directory(
+    async def create_directory(self, directory_path) -> str:
+        """
+        ディレクトリの作成関数
+        """
+        cid_path = pathlib.Path(directory_path)
+        cid_path.mkdir(parents=True)
+        # service_nameのフォルダにマーカーを設置
+        (cid_path / "automatic_created_dir").touch()
+        (cid_path.parent / "automatic_created_dir").touch()
+        return str(cid_path)
+
+    async def create_video_directory(
             self, service_name, cid, title, explanation, meta_data) -> str:
         """
         ビデオディレクトリの作成関数
@@ -159,18 +170,6 @@ class FilemanagerClass:
         self.write_json(_created_dir + "/info.json", dict_template)
         await self.write_playlist(_created_dir + "/playlist.m3u8", "init")
         return str(_created_dir)
-
-    async def delete_directory2(self, service_name, cid, vid):
-        """
-        ビデオディレクトリの削除関数
-        """
-        _delete_dir = "/".join([self.video_dir, service_name, cid, vid])
-        try:
-            await general_module.async_wrap(shutil.rmtree)(_delete_dir)
-        except Exception:
-            return False
-        else:
-            return True
 
     async def delete_directory(self, *args):
         """

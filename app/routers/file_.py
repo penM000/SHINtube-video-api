@@ -39,7 +39,7 @@ async def fileupload_endpoint(
     print(title)
     if service_name is None:
         service_name = str(year)
-    created_dir = await filemanager.create_directory(
+    created_dir = await filemanager.create_video_directory(
         service_name, cid, title, explanation, meta_data)
     file_path = f"./{created_dir}/{title}"
     await filemanager.write_file(file_path, in_file)
