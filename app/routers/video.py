@@ -100,7 +100,9 @@ async def emptyupload_endpoint(
 async def directory(
         service_name: str,
         cid: str = None,):
+    service_name = service_name.replace("/", "")
     if cid:
+        cid = cid.replace("/", "")
         cid_path = "/".join([filemanager.video_dir, service_name, cid])
     else:
         cid_path = "/".join([filemanager.video_dir, service_name])
