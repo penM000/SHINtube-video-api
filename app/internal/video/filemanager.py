@@ -126,16 +126,19 @@ class FilemanagerClass:
             # print('\n'.join(write_data))
             await f.write("\n".join(write_data) + "\n")
 
-    async def create_directory(self, directory_path) -> str:
+    async def create_directory(self, directory_path) -> None:
         """
         ディレクトリの作成関数
         """
-        cid_path = pathlib.Path(directory_path)
-        cid_path.mkdir(parents=True)
-        # service_nameのフォルダにマーカーを設置
-        (cid_path / "automatic_created_dir").touch()
-        (cid_path.parent / "automatic_created_dir").touch()
-        return str(cid_path)
+        try:
+            cid_path = pathlib.Path(directory_path)
+            cid_path.mkdir(parents=True)
+            # service_nameのフォルダにマーカーを設置
+            (cid_path / "automatic_created_dir").touch()
+            (cid_path.parent / "automatic_created_dir").touch()
+            return None
+        except Exception as e:
+            return str(e)
 
     async def create_video_directory(
             self, service_name, cid, title, explanation, meta_data) -> str:

@@ -104,8 +104,13 @@ async def directory(
         cid_path = "/".join([filemanager.video_dir, service_name, cid])
     else:
         cid_path = "/".join([filemanager.video_dir, service_name])
-    await filemanager.create_directory(cid_path)
-    return {"Result": "OK"}
+    result = await filemanager.create_directory(cid_path)
+    if result is None:
+        return {"Result": "OK"}
+    else:
+        return {
+            "Result": "NO",
+            "Detail": result}
 
 
 @router.delete("/service")
