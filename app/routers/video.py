@@ -108,6 +108,8 @@ async def directory(
     if result is None:
         return {"Result": "OK"}
     else:
+        if "File exists" in result:
+            result = "既に存在しています"
         return {
             "Result": "NO",
             "Detail": result}
