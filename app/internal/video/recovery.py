@@ -6,6 +6,7 @@ from .encode import encoder
 from .database import database
 from ..module.general_module import general_module
 from .queue import queue
+from .filecopy import FilecopyClass
 from ..module.logger import logger
 
 
@@ -116,6 +117,23 @@ class recovery_class():
             await database.encode_error(str(video_content_path),
                                         "file write error")
 
+    async def copy_recovery(self):
+        async_list = general_module.async_wrap(list)
+        current_directory = pathlib.Path("./")
+        copy_maker_paths = current_directory.glob("**/automatic_copy_maker")
+        copy_maker_paths = await async_list(copy_maker_paths)
+        filecopy = FilecopyClass()
+        for copy_maker_path in copy_maker_paths:
+            copy_maker_data = await general_module.read_file(copy_maker_path)
+            src_path = copy_maker_data.split("\n")[0]
+            dst_path = copy_maker_data.split("\n")[-1]
+
+            asyncio.create_task(
+                filecopy.copy_video_backend(
+                    src_path, dst_path))
+
+        pass
+
     async def runrecovery(self):
         info_paths = await self.get_all_info_path()
         for info_path in info_paths:
@@ -127,6 +145,7 @@ class recovery_class():
             await self.encode_video_recovery(info_path)
             await self.encode_queue_recovery(info_path)
             await self.encode_audio_recovery(info_path)
+        await self.copy_recovery()
 
 
 recovery = recovery_class()

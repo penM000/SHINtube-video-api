@@ -11,6 +11,7 @@ from ..internal.video.database import database
 from ..internal.video.queue import queue
 from ..internal.video.recovery import recovery
 from ..internal.video.encode import encoder
+from ..internal.video.filecopy import FilecopyClass
 
 router = APIRouter(
     prefix="/api/video",
@@ -94,6 +95,27 @@ async def emptyupload_endpoint(
     (created_dir_path / "emptyfile").touch()
     vid = created_dir_path.name
     return {"Result": "OK", "vid": vid}
+
+
+@router.post("/copydirectory")
+async def copy_video_directory(src_service_name: str,
+                               src_cid: str,
+                               dst_service_name: str,
+                               dst_cid: str,
+                               src_vid: str = None,):
+    filecopy = FilecopyClass()
+    if src_vid is None:
+        await filecopy.copy_cid_directory(src_service_name,
+                                          src_cid,
+                                          dst_service_name,
+                                          dst_cid)
+    else:
+        await filecopy.copy_video(src_service_name,
+                                  src_cid,
+                                  src_vid,
+                                  dst_service_name,
+                                  dst_cid)
+    return {"Result": "OK"}
 
 
 @router.post("/directory")

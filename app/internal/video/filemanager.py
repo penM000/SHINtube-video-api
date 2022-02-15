@@ -131,7 +131,7 @@ class FilemanagerClass:
         ディレクトリの作成関数
         """
         try:
-            cid_path = pathlib.Path(directory_path)
+            cid_path = pathlib.Path(str(directory_path))
             cid_path.mkdir(parents=True)
             # service_nameのフォルダにマーカーを設置
             (cid_path / "automatic_created_dir").touch()
@@ -168,6 +168,7 @@ class FilemanagerClass:
             "resolution": [],
             "encode_tasks": [],
             "encode_error": [],
+            "status": [],
             "meta_data": meta_data,
         }
         self.write_json(_created_dir + "/info.json", dict_template)
