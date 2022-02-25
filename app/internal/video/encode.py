@@ -24,6 +24,9 @@ class encoder_class:
             240: 0.24,
             160: 0.24
         }
+        # エンコードテストフラグ
+        self.encode_testing = False
+
         # 利用可能なエンコーダ
         self.encoder_available = {
             "vaapi": False,
@@ -310,6 +313,8 @@ class encoder_class:
             folderpath: str,
             filename: str,
             resolution: int,) -> encode_command_class:
+        while self.encode_testing:
+            await asyncio.sleep(1)
         if self.encode_worker == 0:
             await self.encode_test()
         # 利用可能なエンコーダーの探索
@@ -435,6 +440,8 @@ class encoder_class:
         """
         エンコードのテスト
         """
+
+        self.encode_testing = True
         logger.info("エンコードテスト開始")
         self.encode_worker = 0
 
@@ -476,6 +483,7 @@ class encoder_class:
         logger.info("エンコードテスト完了")
         logger.info(f"{self.encoder_available}")
         logger.info(f"エンコードworker数={self.encode_worker}")
+        self.encode_testing = False
         return self.encoder_available
 
 
