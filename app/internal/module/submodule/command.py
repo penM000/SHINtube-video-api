@@ -38,8 +38,8 @@ class CommandClass:
                 # print(f'[stderr]\n{stderr.decode()}')
             result = self.CommandResultClass(
                 proc.returncode,
-                f'{stdout.decode()}',
-                f'{stderr.decode()}')
+                f'{stdout.decode("utf-8","ignore")}',
+                f'{stderr.decode("utf-8","ignore")}')
         else:
             while proc.returncode is None:
                 line = await proc.stderr.readline()
