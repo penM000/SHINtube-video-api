@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from .routers import video
-from .routers import videolegacy
 from .routers import file_
 
 description = """
