@@ -19,7 +19,7 @@ class FilecopyClass(FilemanagerClass):
         # コピー元
         src_folder_path = pathlib.Path(str(src_path))
         src_info_path = src_folder_path / "info.json"
-        src_info = await general_module.read_json_async(src_info_path)
+        src_info = general_module.read_json_sync(src_info_path)
         # info.jsonにstatusキーがないときの処理
         if "status" in src_info:
             src_info["status"].append("copying")
@@ -50,7 +50,7 @@ class FilecopyClass(FilemanagerClass):
         # コピー元
         src_folder_path = pathlib.Path(str(src_path))
         src_info_path = src_folder_path / "info.json"
-        src_info = await general_module.read_json_async(src_info_path)
+        src_info = general_module.read_json_sync(src_info_path)
         # ロックの解除
         src_info["status"] = list(set(src_info["status"]))
         src_info["status"].remove("copying")

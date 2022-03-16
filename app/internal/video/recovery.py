@@ -37,7 +37,7 @@ class recovery_class():
         video_content_path = info_path.parent
 
         # info.jsonを取得
-        info_data = await general_module.read_json_async(info_path)
+        info_data = general_module.read_json_sync(info_path)
         count = 0
 
         # info.jsonのリストの要素がすべて0なら初期状態
@@ -59,7 +59,7 @@ class recovery_class():
         video_content_path = info_path.parent
 
         # info.jsonの読み取り
-        info_data = await general_module.read_json_async(info_path)
+        info_data = general_module.read_json_sync(info_path)
         # original_video.拡張子のパスを取得
         original_video_path = await self.get_original_video_path(
             video_content_path)

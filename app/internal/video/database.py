@@ -18,7 +18,7 @@ class DatabaseClass(FilemanagerClass):
         # 既存のjsonを読み込み
         json_file = "/".join([self.video_dir, service_name,
                              cid, vid, "info.json"])
-        _dict = await general_module.read_json_async(json_file)
+        _dict = general_module.read_json_sync(json_file)
         if not _dict:
             return False
         # jsonの更新
@@ -33,7 +33,7 @@ class DatabaseClass(FilemanagerClass):
     async def encode_result(self, folderpath, resolution, result=True):
         # 既存のjsonを読み込み
         json_file = "/".join([folderpath, "info.json"])
-        _dict = await general_module.read_json_async(json_file)
+        _dict = general_module.read_json_sync(json_file)
 
         if not _dict:
             return False
@@ -53,7 +53,7 @@ class DatabaseClass(FilemanagerClass):
     async def encode_task(self, folderpath, resolution):
         # 既存のjsonを読み込み
         json_file = "/".join([folderpath, "info.json"])
-        _dict = await general_module.read_json_async(json_file)
+        _dict = general_module.read_json_sync(json_file)
         if not _dict:
             return False
         if f"{resolution}p" in _dict["resolution"]:
@@ -68,7 +68,7 @@ class DatabaseClass(FilemanagerClass):
     async def encode_error(self, folderpath, message):
         # 既存のjsonを読み込み
         json_file = "/".join([folderpath, "info.json"])
-        _dict = await general_module.read_json_async(json_file)
+        _dict = general_module.read_json_sync(json_file)
         if not _dict:
             return False
         # 画質の追加
