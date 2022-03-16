@@ -201,7 +201,7 @@ async def update_video(
     if meta_data == "":
         json_file = "/".join([filemanager.video_dir, str(service_name),
                               cid, vid, "info.json"])
-        json_data = await general_module.read_json(json_file)
+        json_data = await general_module.read_json_async(json_file)
         meta_data = json_data["meta_data"]
     await database.update_info(service_name,
                                cid, vid, title,
@@ -234,7 +234,7 @@ async def update_info(
     if meta_data == "":
         json_file = "/".join([filemanager.video_dir, service_name,
                               cid, vid, "info.json"])
-        json_data = await general_module.read_json(json_file)
+        json_data = await general_module.read_json_async(json_file)
         meta_data = json_data["meta_data"]
     await database.update_info(
         service_name,

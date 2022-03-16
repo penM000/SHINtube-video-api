@@ -38,7 +38,7 @@ class GeneralModuleClass(CommandClass):
         # 英数字からランダムに取得
         return ''.join([random.choice(dat) for i in range(num)])
 
-    async def read_file(self, file_path) -> str:
+    async def read_file_async(self, file_path) -> str:
         """
         非同期でファイルを読み込む関数
         """
@@ -50,14 +50,15 @@ class GeneralModuleClass(CommandClass):
 
         return file_data
 
-    async def read_json(self, file_path) -> dict:
+    async def read_json_async(self, file_path) -> dict:
         """
         非同期でjsonを読み込む関数
         """
         try:
-            json_data = await self.read_file(file_path)
+            json_data = await self.read_file_async(file_path)
             python_dict = json.loads(json_data)
-        except Exception:
+        except Exception as e:
+            print(e)
             return {}
         else:
             return python_dict

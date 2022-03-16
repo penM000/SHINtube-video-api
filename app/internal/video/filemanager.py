@@ -209,7 +209,7 @@ class FilemanagerClass:
         # 既存のjsonを読み込み
         json_file = "/".join([self.video_dir, service_name,
                              cid, vid, "info.json"])
-        _dict = await general_module.read_json(json_file)
+        _dict = await general_module.read_json_async(json_file)
         if not _dict:
             return False
         # jsonの更新
@@ -234,7 +234,7 @@ class FilemanagerClass:
         count = 0
         size = 0
         for info_path in all_info_path:
-            info_data = await general_module.read_json(info_path)
+            info_data = await general_module.read_json_async(info_path)
             num = 0
             num += len(info_data["encode_tasks"])
             num += len(info_data["encode_error"])
