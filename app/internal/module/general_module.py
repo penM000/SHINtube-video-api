@@ -50,6 +50,18 @@ class GeneralModuleClass(CommandClass):
 
         return file_data
 
+    def read_file_sync(self, file_path) -> str:
+        """
+        同期でファイルを読み込む関数
+        """
+        file_path = str(file_path)
+        file_data = None
+
+        with open(file_path, "r") as f:
+            file_data = f.read()
+
+        return file_data
+
     async def read_json_async(self, file_path) -> dict:
         """
         非同期でjsonを読み込む関数
@@ -57,8 +69,19 @@ class GeneralModuleClass(CommandClass):
         try:
             json_data = await self.read_file_async(file_path)
             python_dict = json.loads(json_data)
-        except Exception as e:
-            print(e)
+        except Exception:
+            return {}
+        else:
+            return python_dict
+
+    def read_json_sync(self, file_path) -> dict:
+        """
+        同期でjsonを読み込む関数
+        """
+        try:
+            json_data = self.read_file_sync(file_path)
+            python_dict = json.loads(json_data)
+        except Exception:
             return {}
         else:
             return python_dict
